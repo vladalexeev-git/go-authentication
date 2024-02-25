@@ -1,0 +1,9 @@
+http:
+  port: "8787"
+  cors_allow_origins: "http://localhost:3000"
+
+logger:
+  log_level: "debug"
+  format: "json"
+  color: true
+
