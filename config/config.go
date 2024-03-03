@@ -8,8 +8,9 @@ import (
 
 type (
 	Config struct {
-		HTTP   `yaml:"http"`
-		Logger `yaml:"logger"`
+		HTTP     `yaml:"http"`
+		Logger   `yaml:"logger"`
+		Postgres `yaml:"postgres"`
 	}
 
 	HTTP struct {
@@ -21,6 +22,10 @@ type (
 		LogLevel string `yaml:"log_level"`
 		Format   string `yaml:"format"`
 		Color    bool   `yaml:"color"`
+	}
+	Postgres struct {
+		PoolMax int    `yaml:"pool_max"`
+		URL     string `env:"PG_URL"`
 	}
 )
 

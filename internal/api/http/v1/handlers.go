@@ -6,6 +6,8 @@ import (
 	"sso/config"
 )
 
+const apiPath = "/v1"
+
 func SetupHandlers(handler *gin.Engine, log *slog.Logger, cfg *config.Config) {
 	handler.Use(gin.Logger())
 	handler.Use(gin.Recovery())
@@ -15,4 +17,6 @@ func SetupHandlers(handler *gin.Engine, log *slog.Logger, cfg *config.Config) {
 			"message": "pong",
 		})
 	})
+	accGroup := handler.Group("/account")
+	NewAccount(accGroup, log, cfg)
 }

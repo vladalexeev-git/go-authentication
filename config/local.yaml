@@ -7,3 +7,5 @@ logger:
   format: "json"
   color: true
 
+  postgres:
+    pool_max: 2

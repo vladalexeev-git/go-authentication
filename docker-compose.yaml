@@ -1,0 +1,20 @@
+version: '3.9'
+services:
+
+  postgres:
+#    command: ["postgres", "-c", "listen_addresses=*", "-c", "password_encryption=scram-sha-256"]
+    container_name: postgresSSO
+    network_mode: host
+    image: postgres
+    environment:
+      POSTGRES_USER: "user"
+      POSTGRES_PASSWORD: "pass"
+      POSTGRES_DB: "pgTest"
+    ports:
+      - "5432:5432"
+
+#    volumes:
+#      - pg-data:/var/lib/postgresql/data
+#
+#volumes:
+#  pg-data:

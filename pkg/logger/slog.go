@@ -6,6 +6,7 @@ import (
 	"sso/config"
 )
 
+// TODO: may be rewrite setup logger with options pattern
 const (
 	//format
 	formatJson = "json"

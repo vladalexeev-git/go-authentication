@@ -10,36 +10,52 @@ import (
 	v1 "sso/internal/api/http/v1"
 	"sso/pkg/httpserver"
 	"sso/pkg/logger"
+	"sso/pkg/postgres"
+	"sso/pkg/utils"
 	"syscall"
 )
 
 // Run creates objects via constructors.
 func Run(cfg *config.Config) {
+	const op = "app.run"
+
 	log := logger.SetupLogger(cfg.Logger)
+
+	// Postgres
+	pg, err := postgres.New(cfg.Postgres.URL, postgres.MaxPoolSize(cfg.Postgres.PoolMax))
+	if err != nil {
+		log.Error("can't connect to postgres", slog.String(utils.Operation, op), slog.String("error", err.Error()))
+	}
+	defer pg.Close()
 
 	// HTTP Server
 	handler := gin.New()
 
-	log.Info("listen and serve...", slog.String("port", cfg.HTTP.Port),
-		slog.String("log level", cfg.Logger.LogLevel))
+	log.Info("server is up and running",
+		slog.String("port", cfg.HTTP.Port),
+		slog.String("log_level", cfg.Logger.LogLevel))
 
 	v1.SetupHandlers(handler, log, cfg)
 	httpServer := httpserver.New(handler, httpserver.Port(cfg.HTTP.Port))
 
 	// Waiting signal
 	interrupt := make(chan os.Signal, 1)
-	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(interrupt, syscall.SIGTERM, syscall.SIGINT)
 
 	select {
 	case s := <-interrupt:
 		//l.Info("app - Run - signal: " + s.String())
-		log.Info(fmt.Sprintf("app - Run - signal: %s", s.String()))
+		log.Info("got signal",
+			slog.String(utils.Operation, op),
+			slog.String("signal", s.String()))
 	case err := <-httpServer.Notify():
-		log.Error(fmt.Sprintf("app - Run - httpServer.Notify: %s", err.Error()))
+		log.Error("http server got error, shutting down...",
+			slog.String(utils.Operation, op),
+			slog.String("error", err.Error()))
 	}
 
 	// Shutdown
-	err := httpServer.Shutdown()
+	err = httpServer.Shutdown()
 	if err != nil {
 		log.Error(fmt.Sprintf("app - Run - httpServer.Shutdown: %s", err.Error()))
 	}
