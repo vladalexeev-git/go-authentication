@@ -18,9 +18,9 @@ type AccountService struct {
 
 }
 
-func NewAccountService(cfg *config.Config, log *slog.Logger) *AccountService {
+func NewAccountService(cfg *config.Config, log *slog.Logger, repo AccountRepo) *AccountService {
 
-	return &AccountService{cfg: cfg, log: log}
+	return &AccountService{cfg: cfg, log: log, repo: repo}
 }
 
 func (as *AccountService) Create(ctx context.Context, acc domain.Account) (string, error) {

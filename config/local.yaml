@@ -3,9 +3,7 @@ http:
   cors_allow_origins: "http://localhost:3000"
 
 logger:
-  log_level: "debug"
-  format: "json"
-  color: true
+  env: "local"
 
-  postgres:
-    pool_max: 2
+postgres:
+  pool_max: 2

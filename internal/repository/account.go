@@ -35,8 +35,9 @@ func (ar *accountRepo) Create(ctx context.Context, acc domain.Account) (string, 
 	const op = "repository.accountRepo.Create"
 
 	sql, args, err := ar.pg.Builder.
-		Insert("username, email, password").
-		Values(acc.Username, acc.Email, acc.Password).
+		Insert(_accTable).
+		Columns("username, email, password").
+		Values(acc.Username, acc.Email, acc.PasswordHash).
 		Suffix("RETURNING id").
 		ToSql()
 	if err != nil {

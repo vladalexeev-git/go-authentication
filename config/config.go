@@ -19,9 +19,7 @@ type (
 	}
 
 	Logger struct {
-		LogLevel string `yaml:"log_level"`
-		Format   string `yaml:"format"`
-		Color    bool   `yaml:"color"`
+		Env string `yaml:"env"`
 	}
 	Postgres struct {
 		PoolMax int    `yaml:"pool_max"`

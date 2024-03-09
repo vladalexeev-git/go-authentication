@@ -27,14 +27,6 @@ func (opts PrettyHandlerOptions) NewPrettyHandler(out io.Writer, format string) 
 		Handler: slog.NewJSONHandler(out, opts.SlogOpts), //leave json format as default
 		l:       stdLog.New(out, "", 0),
 	}
-
-	switch format {
-	case formatJson:
-		h.Handler = slog.NewJSONHandler(out, opts.SlogOpts)
-	case formatText:
-		h.Handler = slog.NewTextHandler(out, opts.SlogOpts)
-	}
-
 	return &h
 }
 

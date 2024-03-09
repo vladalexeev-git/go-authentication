@@ -12,7 +12,11 @@ compose-down:
 migrate-create:
 	migrate create -ext sql -dir migrations -seq $(NAME)
 .PHONY: migrate-create
-
+migrate-up:
+	migrate -path ./migrations -database $(PG_URL) -verbose up
+.PHONY: migrate-up
+migrate-down:
+	migrate -path ./migrations -database $(PG_URL) -verbose down
 run:
 	go mod tidy && go mod download && \
 	GIN_MODE=debug CGO_ENABLED=0 go run -tags migrate ./cmd/app

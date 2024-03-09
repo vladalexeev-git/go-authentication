@@ -4,11 +4,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"log/slog"
 	"sso/config"
+	"sso/internal/service"
 )
 
 const apiPath = "/v1"
 
-func SetupHandlers(handler *gin.Engine, log *slog.Logger, cfg *config.Config) {
+func SetupHandlers(handler *gin.Engine, log *slog.Logger, cfg *config.Config, accService service.Account) {
 	handler.Use(gin.Logger())
 	handler.Use(gin.Recovery())
 
@@ -18,5 +19,5 @@ func SetupHandlers(handler *gin.Engine, log *slog.Logger, cfg *config.Config) {
 		})
 	})
 	accGroup := handler.Group("/account")
-	NewAccount(accGroup, log, cfg)
+	NewAccount(accGroup, log, cfg, accService)
 }

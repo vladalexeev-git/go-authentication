@@ -10,6 +10,7 @@ require (
 	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
 	github.com/jackc/pgx/v5 v5.4.3
 	github.com/joho/godotenv v1.5.1
+	github.com/lmittmann/tint v1.0.4
 	golang.org/x/crypto v0.14.0
 )
 

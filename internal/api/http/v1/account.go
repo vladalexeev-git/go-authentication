@@ -20,8 +20,8 @@ type accountHandler struct {
 	accountService service.Account
 }
 
-func NewAccount(handler *gin.RouterGroup, log *slog.Logger, cfg *config.Config) {
-	h := &accountHandler{log: log, cfg: cfg}
+func NewAccount(handler *gin.RouterGroup, log *slog.Logger, cfg *config.Config, accService service.Account) {
+	h := &accountHandler{log: log, cfg: cfg, accountService: accService}
 
 	handler.POST("/create", h.create)
 	handler.GET("/:id", h.get)

@@ -1,46 +1,44 @@
 package logger
 
 import (
+	"github.com/lmittmann/tint"
 	"log/slog"
 	"os"
 	"sso/config"
-)
-
-// TODO: may be rewrite setup logger with options pattern
-const (
-	//format
-	formatJson = "json"
-	formatText = "text"
-	//level
-	levelDebug = "debug"
-	levelInfo  = "info"
+	"time"
 )
 
 func SetupLogger(logCfg config.Logger) *slog.Logger {
-	var opts = slog.HandlerOptions{
-		Level:     slog.LevelInfo, //info level as a default
-		AddSource: true,
-	}
+	var l *slog.Logger
 
-	switch logCfg.LogLevel {
-	case levelDebug:
-		opts.Level = slog.LevelDebug
-	case levelInfo:
-		opts.Level = slog.LevelInfo
+	switch logCfg.Env {
+	case "local":
+		l = setupColorizedSlog()
+	case "dev":
+		l = setupColorizedSlog()
+	case "prod":
+		h := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+			AddSource: true,
+			Level:     slog.LevelInfo,
+		})
+		l = slog.New(h)
+	default:
+		h := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+			AddSource: true,
+			Level:     slog.LevelInfo,
+		})
+		l = slog.New(h)
 	}
+	return l
+}
 
-	if logCfg.Color {
-		prettyOpts := PrettyHandlerOptions{
-			SlogOpts: &opts,
-		}
-		handlerPretty := prettyOpts.NewPrettyHandler(os.Stdout, logCfg.Format)
-		return slog.New(handlerPretty)
-	}
-	if logCfg.Format == formatText {
-		handlerText := slog.NewTextHandler(os.Stdout, &opts)
-		return slog.New(handlerText)
-	}
-
-	handlerJSON := slog.NewJSONHandler(os.Stdout, &opts)
-	return slog.New(handlerJSON)
+func setupColorizedSlog() *slog.Logger {
+	logger := slog.New(
+		tint.NewHandler(os.Stdout, &tint.Options{
+			AddSource:  true,
+			Level:      slog.LevelDebug,
+			TimeFormat: time.Kitchen,
+		}),
+	)
+	return logger
 }
