@@ -72,4 +72,15 @@ func (as *AccountService) GetByEmail(ctx context.Context, email string) (domain.
 	return acc, nil
 }
 
-//Delete
+func (as *AccountService) Delete(ctx context.Context, aid string) error {
+	const op = "service.Delete"
+
+	err := as.repo.Delete(ctx, aid)
+	if err != nil {
+		as.log.Error("can't delete account",
+			slog.String(utils.Operation, op),
+			slog.String("error", err.Error()))
+		return fmt.Errorf("%s : %w", op, err)
+	}
+	return nil
+}

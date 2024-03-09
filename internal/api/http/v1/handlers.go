@@ -18,6 +18,10 @@ func SetupHandlers(handler *gin.Engine, log *slog.Logger, cfg *config.Config, ac
 			"message": "pong",
 		})
 	})
-	accGroup := handler.Group("/account")
-	NewAccount(accGroup, log, cfg, accService)
+	h := handler.Group(apiPath)
+
+	{
+
+	}
+	NewAccount(h, log, cfg, accService)
 }

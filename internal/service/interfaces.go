@@ -9,6 +9,7 @@ type Account interface {
 	Create(ctx context.Context, acc domain.Account) (string, error)
 	GetByID(ctx context.Context, aid string) (domain.Account, error)
 	GetByEmail(ctx context.Context, email string) (domain.Account, error)
+	Delete(ctx context.Context, aid string) error
 }
 
 type AccountRepo interface {

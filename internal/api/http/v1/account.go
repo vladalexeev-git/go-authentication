@@ -23,8 +23,14 @@ type accountHandler struct {
 func NewAccount(handler *gin.RouterGroup, log *slog.Logger, cfg *config.Config, accService service.Account) {
 	h := &accountHandler{log: log, cfg: cfg, accountService: accService}
 
-	handler.POST("/create", h.create)
-	handler.GET("/:id", h.get)
+	g := handler.Group("/account")
+
+	{
+		g.POST("/create", h.create)
+		g.GET("/:id", h.get)
+		g.POST("/delete/:id", h.delete)
+	}
+
 }
 
 //TODO: Create special errors understandable for users
@@ -84,4 +90,21 @@ func (ah *accountHandler) get(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, acc)
+}
+
+func (ah *accountHandler) delete(c *gin.Context) {
+	const op = "api.delete"
+	aid := c.Param("id")
+
+	err := ah.accountService.Delete(context.TODO(), aid)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		ah.log.Error("can't delete account",
+			slog.String(utils.Operation, op),
+			slog.String("error", err.Error()))
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"message": "account deleted",
+	})
 }

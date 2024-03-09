@@ -16,6 +16,7 @@ import (
 )
 
 // TODO: think about delete method may be should delete by whole acc or email too
+// TODO: delete method do not return anything even if can't find account, think how to improve
 const _accTable = "accounts"
 
 type accountRepo struct {
@@ -149,7 +150,8 @@ func (ar *accountRepo) Delete(ctx context.Context, aid string) error {
 		return fmt.Errorf("%s : %w", op, err)
 	}
 
-	_, err = ar.pg.Pool.Exec(ctx, sql, args...)
+	ct, err := ar.pg.Pool.Exec(ctx, sql, args...)
+	ar.log.Debug("returned result", slog.Int64("count", ct.RowsAffected()), slog.String("string", ct.String()))
 	if err != nil {
 		return fmt.Errorf("%s : %w", op, err)
 	}
