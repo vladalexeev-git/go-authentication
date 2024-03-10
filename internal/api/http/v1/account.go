@@ -20,7 +20,7 @@ type accountHandler struct {
 	accountService service.Account
 }
 
-func NewAccount(handler *gin.RouterGroup, log *slog.Logger, cfg *config.Config, accService service.Account) {
+func newAccountHandler(handler *gin.RouterGroup, log *slog.Logger, cfg *config.Config, accService service.Account) {
 	h := &accountHandler{log: log, cfg: cfg, accountService: accService}
 
 	g := handler.Group("/account")

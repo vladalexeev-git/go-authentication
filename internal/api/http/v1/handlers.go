@@ -23,5 +23,6 @@ func SetupHandlers(handler *gin.Engine, log *slog.Logger, cfg *config.Config, ac
 	{
 
 	}
-	NewAccount(h, log, cfg, accService)
+	newAccountHandler(h, log, cfg, accService)
+	newAuthHandler(h, log, cfg)
 }

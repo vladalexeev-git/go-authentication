@@ -7,3 +7,17 @@ logger:
 
 postgres:
   pool_max: 2
+
+session:
+  ttl: 60m
+  cookie_key: "id"
+  cookie_domain: ""
+  cookie_secure: false
+  cookie_httponly: true
+
+access_token:
+  ttl: 1m
+  signing_key: "secret"
+
+mongodb:
+  database: "sso"

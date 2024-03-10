@@ -21,31 +21,45 @@ import (
 func Run(cfg *config.Config) {
 	const op = "app.run"
 
+	// Logger
 	log := logger.SetupLogger(cfg.Logger)
-	log.Info("app is starting...",
+	l := log.With(slog.String(utils.Operation, op))
+	l.Info("app is starting...",
 		slog.String("log_environment", cfg.Logger.Env))
 
 	// Postgres
+	l.Debug("postgres url from config", slog.String("postgres_url", cfg.Postgres.URL))
+
 	pg, err := postgres.New(cfg.Postgres.URL, postgres.MaxPoolSize(cfg.Postgres.PoolMax))
-	log.Debug("postgres url from config", slog.String("postgres_url", cfg.Postgres.URL))
-	//defer pg.Close()
 	if err != nil {
-		log.Error("can't connect to postgres", slog.String(utils.Operation, op), slog.String("error", err.Error()))
+		l.Error("can't connect to postgres", slog.String(utils.Operation, op), slog.String("error", err.Error()))
 		return
 	}
+	defer pg.Close()
 
-	accountRepo := repository.NewAccountRepo(log, pg)
+	// MongoDB
+	//mCl, err := mongodb.NewClient(cfg.MongoDB.URI, cfg.MongoDB.Username, cfg.MongoDB.Password)
+	//if err != nil {
+	//	l.Error("can't connect to mongodb",
+	//		slog.String("error", err.Error()))
+	//	return
+	//}
+	//mDB := mCl.Database(cfg.MongoDB.Database)
+	//
+	//// Repositories
+	accountRepo := repository.NewAccountRepo(l, pg)
+	//sessionRepo := repository.NewSessionRepo(mDB)
 
 	// Services
-	accountService := service.NewAccountService(cfg, log, accountRepo)
+	accountService := service.NewAccountService(cfg, l, accountRepo)
 
-	//Handlers v1
+	// Handlers v1
 	handler := gin.New()
-	v1.SetupHandlers(handler, log, cfg, accountService)
+	v1.SetupHandlers(handler, l, cfg, accountService)
 
 	// HTTP Server
 	httpServer := httpserver.New(handler, httpserver.Port(cfg.HTTP.Port))
-	log.Info("server is up and running",
+	l.Info("server is up and running",
 		slog.String("port", cfg.HTTP.Port))
 
 	// Waiting signal
@@ -55,18 +69,18 @@ func Run(cfg *config.Config) {
 	select {
 	case s := <-interrupt:
 		//l.Info("app - Run - signal: " + s.String())
-		log.Info("got signal",
-			slog.String(utils.Operation, op),
+		l.Info("got signal",
+			//slog.String(utils.Operation, op),
 			slog.String("signal", s.String()))
 	case err := <-httpServer.Notify():
-		log.Error("http server got error, shutting down...",
-			slog.String(utils.Operation, op),
+		l.Error("http server got error, shutting down...",
+			//slog.String(utils.Operation, op),
 			slog.String("error", err.Error()))
 	}
 
 	// Shutdown
 	err = httpServer.Shutdown()
 	if err != nil {
-		log.Error(fmt.Sprintf("app - Run - httpServer.Shutdown: %s", err.Error()))
+		l.Error(fmt.Sprintf("app - Run - httpServer.Shutdown: %s", err.Error()))
 	}
 }

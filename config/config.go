@@ -4,26 +4,47 @@ import (
 	"flag"
 	"github.com/ilyakaznacheev/cleanenv"
 	"os"
+	"time"
 )
 
 type (
 	Config struct {
-		HTTP     `yaml:"http"`
-		Logger   `yaml:"logger"`
-		Postgres `yaml:"postgres"`
+		HTTP        `yaml:"http"`
+		Logger      `yaml:"logger"`
+		Postgres    `yaml:"postgres"`
+		AccessToken `yaml:"access_token"`
+		Session     `yaml:"session"`
+		MongoDB     `yaml:"mongodb"`
 	}
 
 	HTTP struct {
 		Port             string `yaml:"port"`
 		CorsAllowOrigins string `yaml:"cors_allow_origins"`
 	}
-
 	Logger struct {
 		Env string `yaml:"env"`
 	}
 	Postgres struct {
 		PoolMax int    `yaml:"pool_max"`
 		URL     string `env:"PG_URL"`
+	}
+	Session struct {
+		TTL            time.Duration `yaml:"ttl"`
+		CookieKey      string        `yaml:"cookie_key"`
+		CookieDomain   string        `yaml:"cookie_domain"`
+		CookieSecure   bool          `yaml:"cookie_secure"`
+		CookieHttpOnly bool          `yaml:"cookie_httponly"`
+	}
+	AccessToken struct {
+		TTL        string `yaml:"ttl"`
+		SigningKey string `yaml:"signing_key"`
+	}
+
+	MongoDB struct {
+		Database string `yaml:"database"`
+		URI      string `yaml:"uri" env:"MONGO_URI"`
+		Username string `yaml:"username" env:"MONGO_USER"`
+		Password string `yaml:"password" env:"MONGO_PASS"`
 	}
 )
 
