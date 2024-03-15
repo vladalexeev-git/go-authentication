@@ -20,4 +20,4 @@ access_token:
   signing_key: "secret"
 
 mongodb:
-  database: "sso"
+  db_name: "sso"

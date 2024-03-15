@@ -41,7 +41,7 @@ type (
 	}
 
 	MongoDB struct {
-		Database string `yaml:"database"`
+		DbName   string `yaml:"db_name"`
 		URI      string `yaml:"uri" env:"MONGO_URI"`
 		Username string `yaml:"username" env:"MONGO_USER"`
 		Password string `yaml:"password" env:"MONGO_PASS"`

@@ -29,4 +29,6 @@ type SessionRepo interface {
 	Create(ctx context.Context, session domain.Session) error
 	FindByID(ctx context.Context, id string) (domain.Session, error)
 	FindAll(ctx context.Context, aid string) ([]domain.Session, error)
+	Delete(ctx context.Context, sid string) error
+	DeleteAll(ctx context.Context, aid, currSid string) error
 }

@@ -15,12 +15,12 @@ type AccountService struct {
 
 	repo AccountRepo
 	//TODO: sessions
-
+	sessions SessionRepo
 }
 
-func NewAccountService(cfg *config.Config, log *slog.Logger, repo AccountRepo) *AccountService {
+func NewAccountService(cfg *config.Config, log *slog.Logger, repo AccountRepo, sess SessionRepo) *AccountService {
 
-	return &AccountService{cfg: cfg, log: log, repo: repo}
+	return &AccountService{cfg: cfg, log: log, repo: repo, sessions: sess}
 }
 
 func (as *AccountService) Create(ctx context.Context, acc domain.Account) (string, error) {

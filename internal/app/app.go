@@ -12,6 +12,7 @@ import (
 	"sso/internal/service"
 	"sso/pkg/httpserver"
 	"sso/pkg/logger"
+	"sso/pkg/mongodb"
 	"sso/pkg/postgres"
 	"sso/pkg/utils"
 	"syscall"
@@ -37,25 +38,25 @@ func Run(cfg *config.Config) {
 	}
 	defer pg.Close()
 
-	// MongoDB
-	//mCl, err := mongodb.NewClient(cfg.MongoDB.URI, cfg.MongoDB.Username, cfg.MongoDB.Password)
-	//if err != nil {
-	//	l.Error("can't connect to mongodb",
-	//		slog.String("error", err.Error()))
-	//	return
-	//}
-	//mDB := mCl.Database(cfg.MongoDB.Database)
-	//
-	//// Repositories
-	accountRepo := repository.NewAccountRepo(l, pg)
-	//sessionRepo := repository.NewSessionRepo(mDB)
+	//MongoDB
+	mCl, err := mongodb.NewClient(cfg.MongoDB.URI, cfg.MongoDB.Username, cfg.MongoDB.Password)
+	if err != nil {
+		l.Error("can't connect to mongodb",
+			slog.String("error", err.Error()))
+		return
+	}
+	mDB := mCl.Database(cfg.MongoDB.DbName)
+
+	// Repositories
+	accountRepo := repository.NewAccountRepo(log, pg)
+	sessionRepo := repository.NewSessionRepo(mDB, log)
 
 	// Services
-	accountService := service.NewAccountService(cfg, l, accountRepo)
+	accountService := service.NewAccountService(cfg, log, accountRepo, sessionRepo)
 
 	// Handlers v1
 	handler := gin.New()
-	v1.SetupHandlers(handler, l, cfg, accountService)
+	v1.SetupHandlers(handler, log, cfg, accountService)
 
 	// HTTP Server
 	httpServer := httpserver.New(handler, httpserver.Port(cfg.HTTP.Port))

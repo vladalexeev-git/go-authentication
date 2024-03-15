@@ -41,10 +41,12 @@ func (r *sessionRepo) Create(ctx context.Context, session domain.Session) error 
 	return nil
 }
 
-func (r *sessionRepo) FindByID(ctx context.Context, id string) (domain.Session, error) {
+func (r *sessionRepo) FindByID(ctx context.Context, sid string) (domain.Session, error) {
 	var session domain.Session
 
-	if err := r.mongo.FindOne(ctx, bson.M{"_id": id}).Decode(&session); err != nil {
+	if err := r.mongo.FindOne(ctx, bson.M{"_id": sid}).Decode(&session); err != nil {
+		r.log.Error("findOne: can't find session",
+			slog.String("error", err.Error()))
 		return domain.Session{}, err
 	}
 	return session, nil
@@ -53,15 +55,44 @@ func (r *sessionRepo) FindByID(ctx context.Context, id string) (domain.Session, 
 func (r *sessionRepo) FindAll(ctx context.Context, aid string) ([]domain.Session, error) {
 	cursor, err := r.mongo.Find(ctx, bson.M{"accountId": bson.M{"$eq": aid}})
 	if err != nil {
-		r.log.Error("r.mongo.Find: can't find sessions",
+		r.log.Error("r.mongo.FindAll: can't find sessions",
 			slog.String("error", err.Error()))
 		return nil, err
 	}
+	defer cursor.Close(ctx) //todo ?
+
 	var sessions []domain.Session
+
 	if err = cursor.All(ctx, &sessions); err != nil {
 		r.log.Error("cursor.All: can't find sessions",
 			slog.String("error", err.Error()))
-		return nil, err
+		return sessions, err
 	}
 	return sessions, nil
+}
+
+func (r *sessionRepo) Delete(ctx context.Context, sid string) error {
+	_, err := r.mongo.DeleteOne(ctx, bson.M{"_id": sid})
+	if err != nil {
+		r.log.Error("r.deleteOne",
+			slog.String("error", err.Error()))
+		return err
+	}
+
+	return nil
+}
+
+func (r *sessionRepo) DeleteAll(ctx context.Context, aid, currSid string) error {
+	_, err := r.mongo.DeleteMany(ctx,
+		bson.M{
+			"_id":       bson.M{"$ne": currSid},
+			"accountId": aid,
+		})
+	if err != nil {
+		r.log.Error("r.deleteMany",
+			slog.String("error", err.Error()))
+		return err
+	}
+
+	return nil
 }
