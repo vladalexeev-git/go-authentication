@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"context"
 	"errors"
 	"github.com/gin-gonic/gin"
 	"log/slog"
@@ -20,7 +19,6 @@ type accountHandler struct {
 	accountService service.Account
 }
 
-// todo add sessionService to this newAcc constructor caller
 func newAccountHandler(handler *gin.RouterGroup, log *slog.Logger, cfg *config.Config, accService service.Account, sessionService service.Session) {
 	h := &accountHandler{log: log, cfg: cfg, accountService: accService}
 
@@ -56,7 +54,7 @@ func (h *accountHandler) create(c *gin.Context) {
 
 	account := domain.Account{Email: r.Email, Username: r.Username, Password: r.Password}
 
-	_, err = h.accountService.Create(context.TODO(), account)
+	_, err = h.accountService.Create(c.Request.Context(), account)
 	if err != nil {
 		if errors.Is(err, apperrors.ErrorAccountAlreadyExists) {
 			h.log.Warn("account already exists",
@@ -77,9 +75,9 @@ func (h *accountHandler) get(c *gin.Context) {
 	const op = "api.get"
 	l := h.log.With(slog.String(utils.Operation, op))
 
-	aid := c.GetString("aid")
+	aid := c.GetString("aid") //todo add special method for getting account id with error return
 
-	acc, err := h.accountService.GetByID(context.TODO(), aid)
+	acc, err := h.accountService.GetByID(c.Request.Context(), aid)
 	if err != nil {
 		if errors.Is(err, apperrors.ErrorAccountNotFound) {
 			l.Warn("account not found",
@@ -111,6 +109,6 @@ func (h *accountHandler) delete(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"message": "account deleted",
+		"message": "account was deleted",
 	})
 }
