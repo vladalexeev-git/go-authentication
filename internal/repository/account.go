@@ -34,6 +34,7 @@ func NewAccountRepo(log *slog.Logger, db *postgres.Postgres) *accountRepo {
 // Create ...
 func (r *accountRepo) Create(ctx context.Context, acc domain.Account) (string, error) {
 	const op = "repository.accountRepo.Create"
+	l := r.log.With(slog.String(utils.Operation, op))
 
 	sql, args, err := r.pg.Builder.
 		Insert(_accTable).
@@ -42,8 +43,7 @@ func (r *accountRepo) Create(ctx context.Context, acc domain.Account) (string, e
 		Suffix("RETURNING id").
 		ToSql()
 	if err != nil {
-		r.log.Error("builder - bad insert query",
-			slog.String(utils.Operation, op),
+		l.Error("builder - bad insert query",
 			slog.String("error", err.Error()))
 
 		return "", fmt.Errorf("%s : %w", op, err)
@@ -57,8 +57,10 @@ func (r *accountRepo) Create(ctx context.Context, acc domain.Account) (string, e
 
 		if errors.As(err, &pgErr) {
 			if pgErr.Code == pgerrcode.UniqueViolation {
+				l.Error("queryrow uniq violation", slog.String("error", err.Error()))
 				return "", fmt.Errorf("%s: %w", op, apperrors.ErrorAccountAlreadyExists)
 			}
+			l.Error("queryrow error", slog.String("error", err.Error()))
 			return "", fmt.Errorf("%s : %w", op, err)
 		}
 	}
@@ -111,7 +113,7 @@ func (r *accountRepo) FindByEmail(ctx context.Context, email string) (domain.Acc
 	l := r.log.With(slog.String(utils.Operation, op))
 
 	sql, args, err := r.pg.Builder.
-		Select("username", "email", "password", "created_at", "updated_at").
+		Select("id", "username", "password", "created_at", "updated_at").
 		From(_accTable).
 		Where(squirrel.Eq{"email": email}).
 		ToSql()
@@ -128,8 +130,8 @@ func (r *accountRepo) FindByEmail(ctx context.Context, email string) (domain.Acc
 	}
 
 	if err = r.pg.Pool.QueryRow(ctx, sql, args...).Scan(
+		&acc.ID,
 		&acc.Username,
-		&acc.Email,
 		&acc.PasswordHash,
 		&acc.CreatedAt,
 		&acc.UpdatedAt,
@@ -169,6 +171,7 @@ func (r *accountRepo) Delete(ctx context.Context, aid string) error {
 		slog.Int64("count", ct.RowsAffected()),
 		slog.String("string", ct.String()))
 	if err != nil {
+		l.Error("pool.exec", slog.String("error", err.Error()))
 		return fmt.Errorf("%s : %w", op, err)
 	}
 	return err

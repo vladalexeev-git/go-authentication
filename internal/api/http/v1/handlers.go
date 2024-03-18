@@ -9,7 +9,14 @@ import (
 
 const apiPath = "/v1"
 
-func SetupHandlers(handler *gin.Engine, log *slog.Logger, cfg *config.Config, accService service.Account, authService service.Auth) {
+func SetupHandlers(
+	handler *gin.Engine,
+	log *slog.Logger,
+	cfg *config.Config,
+	acc service.Account,
+	sess service.Session,
+	auth service.Auth,
+) {
 
 	handler.Use(gin.Logger())
 	handler.Use(gin.Recovery())
@@ -24,8 +31,8 @@ func SetupHandlers(handler *gin.Engine, log *slog.Logger, cfg *config.Config, ac
 	h := handler.Group(apiPath)
 
 	{
-		newAccountHandler(h, log, cfg, accService)
-		newAuthHandler(h, log, cfg, authService)
+		newAccountHandler(h, log, cfg, acc, sess)
+		newAuthHandler(h, log, cfg, auth)
 	}
 
 }

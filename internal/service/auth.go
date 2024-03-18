@@ -31,7 +31,7 @@ func (s *authService) EmailLogin(ctx context.Context, email, password string, d 
 		return domain.Session{}, fmt.Errorf("%s: %w", op, err)
 	}
 	l.Debug("account found",
-		slog.String("email", a.Email),
+		slog.String("email", email),
 		slog.String("id", a.ID),
 		slog.String("password hash", a.PasswordHash))
 
@@ -43,10 +43,12 @@ func (s *authService) EmailLogin(ctx context.Context, email, password string, d 
 		return domain.Session{}, fmt.Errorf("%s: %w", op, err)
 	}
 
+	l.Debug("session is ready to creating", slog.Any("account", a))
 	//creating a session
 	sess, err := s.session.Create(ctx, a.ID, a.Email, d)
 	if err != nil {
 		return domain.Session{}, fmt.Errorf("%s: %w", op, err)
 	}
+
 	return sess, nil
 }

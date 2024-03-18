@@ -16,6 +16,7 @@ type Account interface {
 
 type Session interface {
 	Create(ctx context.Context, aid, provider string, d Device) (domain.Session, error)
+	Get(ctx context.Context, sid string) (domain.Session, error)
 }
 type Auth interface {
 	// EmailLogin creates new session using provided account email and password.

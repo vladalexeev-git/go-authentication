@@ -41,3 +41,14 @@ func (s *sessionService) Create(ctx context.Context, aid, provider string, d Dev
 	}
 	return session, nil
 }
+
+func (s *sessionService) Get(ctx context.Context, sid string) (domain.Session, error) {
+	const op = "sessionservice.get"
+
+	session, err := s.repo.FindByID(ctx, sid)
+	if err != nil {
+		return domain.Session{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return session, nil
+}

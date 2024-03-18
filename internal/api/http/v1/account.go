@@ -20,17 +20,18 @@ type accountHandler struct {
 	accountService service.Account
 }
 
-func newAccountHandler(handler *gin.RouterGroup, log *slog.Logger, cfg *config.Config, accService service.Account) {
+// todo add sessionService to this newAcc constructor caller
+func newAccountHandler(handler *gin.RouterGroup, log *slog.Logger, cfg *config.Config, accService service.Account, sessionService service.Session) {
 	h := &accountHandler{log: log, cfg: cfg, accountService: accService}
 
 	g := handler.Group("/account")
+	g.POST("", h.create)
 
+	authenticated := g.Group("/", sessionMiddleware(log, cfg, sessionService))
 	{
-		g.POST("/create", h.create)
-		g.GET("/:id", h.get)
-		g.POST("/delete/:id", h.delete)
+		authenticated.GET("", h.get)
+		authenticated.DELETE("", h.delete)
 	}
-
 }
 
 //TODO: Create special errors understandable for users
@@ -38,9 +39,9 @@ func newAccountHandler(handler *gin.RouterGroup, log *slog.Logger, cfg *config.C
 
 //TODO: add context instead of context.TODO
 
-func (ah *accountHandler) create(c *gin.Context) {
+func (h *accountHandler) create(c *gin.Context) {
 	const op = "api.create"
-	l := ah.log.With(slog.String(utils.Operation, op))
+	l := h.log.With(slog.String(utils.Operation, op))
 	var r accountCreateRequest
 
 	err := c.BindJSON(&r)
@@ -55,10 +56,10 @@ func (ah *accountHandler) create(c *gin.Context) {
 
 	account := domain.Account{Email: r.Email, Username: r.Username, Password: r.Password}
 
-	_, err = ah.accountService.Create(context.TODO(), account)
+	_, err = h.accountService.Create(context.TODO(), account)
 	if err != nil {
 		if errors.Is(err, apperrors.ErrorAccountAlreadyExists) {
-			ah.log.Error("account already exists",
+			h.log.Warn("account already exists",
 				slog.String(utils.Operation, op),
 				slog.String("error", err.Error()))
 
@@ -72,12 +73,13 @@ func (ah *accountHandler) create(c *gin.Context) {
 	c.Status(http.StatusCreated)
 }
 
-func (ah *accountHandler) get(c *gin.Context) {
+func (h *accountHandler) get(c *gin.Context) {
 	const op = "api.get"
-	l := ah.log.With(slog.String(utils.Operation, op))
-	aid := c.Param("id")
+	l := h.log.With(slog.String(utils.Operation, op))
 
-	acc, err := ah.accountService.GetByID(context.TODO(), aid)
+	aid := c.GetString("aid")
+
+	acc, err := h.accountService.GetByID(context.TODO(), aid)
 	if err != nil {
 		if errors.Is(err, apperrors.ErrorAccountNotFound) {
 			l.Warn("account not found",
@@ -94,15 +96,17 @@ func (ah *accountHandler) get(c *gin.Context) {
 	c.JSON(http.StatusOK, acc)
 }
 
-func (ah *accountHandler) delete(c *gin.Context) {
+func (h *accountHandler) delete(c *gin.Context) {
 	const op = "api.delete"
-	aid := c.Param("id")
+	l := h.log.With(slog.String(utils.Operation, op))
+	aid := c.GetString("aid")
 
-	err := ah.accountService.Delete(context.TODO(), aid)
+	l.Debug("deleting acc by id", slog.String("aid", aid))
+
+	err := h.accountService.Delete(c.Request.Context(), aid)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
-		ah.log.Error("can't delete account",
-			slog.String(utils.Operation, op),
+		l.Error("can't delete account",
 			slog.String("error", err.Error()))
 		return
 	}

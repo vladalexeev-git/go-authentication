@@ -24,22 +24,22 @@ func NewAccountService(cfg *config.Config, log *slog.Logger, repo AccountRepo, s
 
 func (s *AccountService) Create(ctx context.Context, acc domain.Account) (string, error) {
 	const op = "service.create"
+	l := s.log.With(slog.String(utils.Operation, op))
 
 	err := acc.GenPasswordHash()
 	if err != nil {
-		s.log.Error("can't gen password hash",
-			slog.String(utils.Operation, op),
+		l.Error("can't gen password hash",
 			slog.String("error", err.Error()))
 		return "", fmt.Errorf("%s : %w", op, err)
 	}
 
 	aid, err := s.repo.Create(ctx, acc)
 	if err != nil {
-		s.log.Error("can't create account",
-			slog.String(utils.Operation, op),
-			slog.String("error", err.Error()))
 		return "", fmt.Errorf("%s : %w", op, err)
 	}
+
+	l.Info("account created successfully", slog.String("account_id", aid))
+
 	return aid, nil
 }
 

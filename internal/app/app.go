@@ -66,7 +66,7 @@ func Run(cfg *config.Config) {
 
 	// Handlers v1
 	handler := gin.New()
-	v1.SetupHandlers(handler, log, cfg, accountService, authService)
+	v1.SetupHandlers(handler, log, cfg, accountService, sessionService, authService)
 
 	// HTTP Server
 	httpServer := httpserver.New(handler, httpserver.Port(cfg.HTTP.Port))
@@ -79,13 +79,10 @@ func Run(cfg *config.Config) {
 
 	select {
 	case s := <-interrupt:
-		//l.Info("app - Run - signal: " + s.String())
 		l.Info("got signal",
-			//slog.String(utils.Operation, op),
 			slog.String("signal", s.String()))
 	case err := <-httpServer.Notify():
 		l.Error("http server got error, shutting down...",
-			//slog.String(utils.Operation, op),
 			slog.String("error", err.Error()))
 	}
 

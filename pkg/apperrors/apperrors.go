@@ -18,7 +18,8 @@ var (
 
 // session errors
 var (
-	ErrorSessionNotCreated = errors.New("error occurred while creating session")
+	ErrorSessionNotCreated     = errors.New("error occurred while creating session")
+	ErrorSessionDeviceMismatch = errors.New("device doesn't match with device of current session")
 )
 
 // jwt errors
