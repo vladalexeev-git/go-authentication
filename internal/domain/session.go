@@ -18,7 +18,7 @@ type Session struct {
 }
 
 func NewSession(aid, provider, userAgent, ip string, ttl time.Duration) (Session, error) {
-	id, err := utils.UniqueString(32)
+	id, err := utils.UniqueString(32) // todo isn't uuid better?
 	if err != nil {
 		return Session{}, apperrors.ErrorSessionNotCreated
 	}

@@ -32,17 +32,17 @@ func NewAccountRepo(log *slog.Logger, db *postgres.Postgres) *accountRepo {
 }
 
 // Create ...
-func (ar *accountRepo) Create(ctx context.Context, acc domain.Account) (string, error) {
+func (r *accountRepo) Create(ctx context.Context, acc domain.Account) (string, error) {
 	const op = "repository.accountRepo.Create"
 
-	sql, args, err := ar.pg.Builder.
+	sql, args, err := r.pg.Builder.
 		Insert(_accTable).
 		Columns("username, email, password").
 		Values(acc.Username, acc.Email, acc.PasswordHash).
 		Suffix("RETURNING id").
 		ToSql()
 	if err != nil {
-		ar.log.Error("builder - bad insert query",
+		r.log.Error("builder - bad insert query",
 			slog.String(utils.Operation, op),
 			slog.String("error", err.Error()))
 
@@ -52,7 +52,7 @@ func (ar *accountRepo) Create(ctx context.Context, acc domain.Account) (string, 
 	//aid, err := ar.db.Pool.Exec(ctx, sql, args...)
 	var aid string
 
-	if err = ar.pg.Pool.QueryRow(ctx, sql, args...).Scan(&aid); err != nil {
+	if err = r.pg.Pool.QueryRow(ctx, sql, args...).Scan(&aid); err != nil {
 		var pgErr *pgconn.PgError
 
 		if errors.As(err, &pgErr) {
@@ -66,33 +66,39 @@ func (ar *accountRepo) Create(ctx context.Context, acc domain.Account) (string, 
 }
 
 // FindByID ...
-func (ar *accountRepo) FindByID(ctx context.Context, aid string) (domain.Account, error) {
+func (r *accountRepo) FindByID(ctx context.Context, aid string) (domain.Account, error) {
 	const op = "repository.accountRepo.GetByID"
+	l := r.log.With(slog.String(utils.Operation, op))
 
-	sql, args, err := ar.pg.Builder.
+	sql, args, err := r.pg.Builder.
 		Select("username", "email", "password", "created_at", "updated_at").
 		From(_accTable).
 		Where(squirrel.Eq{"id": aid}).
 		ToSql()
 	if err != nil {
-		ar.log.Error("builder - bad select by id query",
-			slog.String(utils.Operation, op),
+		l.Error("builder - bad select by id query",
+			slog.Any("args", args),
+			slog.String("sql", sql),
 			slog.String("error", err.Error()))
 		return domain.Account{}, fmt.Errorf("%s : %w", op, err)
 	}
 
 	var acc = domain.Account{ID: aid}
 
-	if err = ar.pg.Pool.QueryRow(ctx, sql, args...).Scan(
+	if err = r.pg.Pool.QueryRow(ctx, sql, args...).Scan(
 		&acc.Username,
 		&acc.Email,
-		&acc.Password,
+		&acc.PasswordHash,
 		&acc.CreatedAt,
 		&acc.UpdatedAt,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
+			l.Error("account not found",
+				slog.String("error", err.Error()))
 			return domain.Account{}, fmt.Errorf("%s: %w", op, apperrors.ErrorAccountNotFound)
 		}
+		l.Error("bad queryRow or scan",
+			slog.String("error", err.Error()))
 		return domain.Account{}, fmt.Errorf("%s : %w", op, err)
 	}
 
@@ -100,17 +106,19 @@ func (ar *accountRepo) FindByID(ctx context.Context, aid string) (domain.Account
 }
 
 // FindByEmail ...
-func (ar *accountRepo) FindByEmail(ctx context.Context, email string) (domain.Account, error) {
+func (r *accountRepo) FindByEmail(ctx context.Context, email string) (domain.Account, error) {
 	const op = "repository.accountRepo.GetByEmail"
+	l := r.log.With(slog.String(utils.Operation, op))
 
-	sql, args, err := ar.pg.Builder.
+	sql, args, err := r.pg.Builder.
 		Select("username", "email", "password", "created_at", "updated_at").
 		From(_accTable).
 		Where(squirrel.Eq{"email": email}).
 		ToSql()
 	if err != nil {
-		ar.log.Error("builder - bad select by email query",
-			slog.String(utils.Operation, op),
+		l.Error("builder - bad select by email query",
+			slog.Any("args", args),
+			slog.String("sql", sql),
 			slog.String("error", err.Error()))
 		return domain.Account{}, fmt.Errorf("%s : %w", op, err)
 	}
@@ -119,39 +127,47 @@ func (ar *accountRepo) FindByEmail(ctx context.Context, email string) (domain.Ac
 		Email: email,
 	}
 
-	if err = ar.pg.Pool.QueryRow(ctx, sql, args...).Scan(
+	if err = r.pg.Pool.QueryRow(ctx, sql, args...).Scan(
 		&acc.Username,
 		&acc.Email,
-		&acc.Password,
+		&acc.PasswordHash,
 		&acc.CreatedAt,
 		&acc.UpdatedAt,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
+			l.Error("account not found",
+				slog.String("error", err.Error()))
 			return domain.Account{}, fmt.Errorf("%s: %w", op, apperrors.ErrorAccountNotFound)
 		}
+		l.Error("bad queryRow or scan",
+			slog.String("error", err.Error()))
 		return domain.Account{}, fmt.Errorf("%s : %w", op, err)
 	}
 	return acc, nil
 }
 
 // Delete ...
-func (ar *accountRepo) Delete(ctx context.Context, aid string) error {
+func (r *accountRepo) Delete(ctx context.Context, aid string) error {
 	const op = "repository.accountRepo.Delete"
+	l := r.log.With(slog.String(utils.Operation, op))
 
-	sql, args, err := ar.pg.Builder.
+	sql, args, err := r.pg.Builder.
 		Delete(_accTable).
 		Where(squirrel.Eq{"id": aid}).
 		ToSql()
 
 	if err != nil {
-		ar.log.Error("builder - bad delete query",
-			slog.String(utils.Operation, op),
+		l.Error("builder - bad delete query",
+			slog.String("sql", sql),
+			slog.Any("args", args),
 			slog.String("error", err.Error()))
 		return fmt.Errorf("%s : %w", op, err)
 	}
 
-	ct, err := ar.pg.Pool.Exec(ctx, sql, args...)
-	ar.log.Debug("returned result", slog.Int64("count", ct.RowsAffected()), slog.String("string", ct.String()))
+	ct, err := r.pg.Pool.Exec(ctx, sql, args...)
+	r.log.Debug("returned result",
+		slog.Int64("count", ct.RowsAffected()),
+		slog.String("string", ct.String()))
 	if err != nil {
 		return fmt.Errorf("%s : %w", op, err)
 	}

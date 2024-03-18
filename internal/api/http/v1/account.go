@@ -40,11 +40,12 @@ func newAccountHandler(handler *gin.RouterGroup, log *slog.Logger, cfg *config.C
 
 func (ah *accountHandler) create(c *gin.Context) {
 	const op = "api.create"
+	l := ah.log.With(slog.String(utils.Operation, op))
 	var r accountCreateRequest
 
 	err := c.BindJSON(&r)
 	if err != nil {
-		ah.log.Error("can't unmarshal account request",
+		l.Error("can't unmarshal account request",
 			slog.String(utils.Operation, op),
 			slog.String("error", err.Error()))
 
@@ -73,13 +74,14 @@ func (ah *accountHandler) create(c *gin.Context) {
 
 func (ah *accountHandler) get(c *gin.Context) {
 	const op = "api.get"
+	l := ah.log.With(slog.String(utils.Operation, op))
 	aid := c.Param("id")
 
 	acc, err := ah.accountService.GetByID(context.TODO(), aid)
 	if err != nil {
 		if errors.Is(err, apperrors.ErrorAccountNotFound) {
-			ah.log.Error("account not found",
-				slog.String(utils.Operation, op),
+			l.Warn("account not found",
+				slog.String("account id", aid),
 				slog.String("error", err.Error()))
 			c.AbortWithStatusJSON(http.StatusNotFound, ErrorResponse{Error: apperrors.ErrorAccountNotFound.Error()})
 			return

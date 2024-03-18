@@ -32,12 +32,13 @@ type (
 		TTL            time.Duration `yaml:"ttl"`
 		CookieKey      string        `yaml:"cookie_key"`
 		CookieDomain   string        `yaml:"cookie_domain"`
+		CookiePath     string        `yaml:"cookie_path"`
 		CookieSecure   bool          `yaml:"cookie_secure"`
 		CookieHttpOnly bool          `yaml:"cookie_httponly"`
 	}
 	AccessToken struct {
-		TTL        string `yaml:"ttl"`
-		SigningKey string `yaml:"signing_key"`
+		TTL        time.Duration `yaml:"ttl"`
+		SigningKey string        `yaml:"signing_key"`
 	}
 
 	MongoDB struct {

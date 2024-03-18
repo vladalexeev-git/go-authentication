@@ -10,10 +10,12 @@ import (
 	v1 "sso/internal/api/http/v1"
 	"sso/internal/repository"
 	"sso/internal/service"
+	"sso/pkg/JWT"
 	"sso/pkg/httpserver"
 	"sso/pkg/logger"
 	"sso/pkg/mongodb"
 	"sso/pkg/postgres"
+	//"sso/pkg/postgres"
 	"sso/pkg/utils"
 	"syscall"
 )
@@ -28,7 +30,7 @@ func Run(cfg *config.Config) {
 	l.Info("app is starting...",
 		slog.String("log_environment", cfg.Logger.Env))
 
-	// Postgres
+	//Postgres
 	l.Debug("postgres url from config", slog.String("postgres_url", cfg.Postgres.URL))
 
 	pg, err := postgres.New(cfg.Postgres.URL, postgres.MaxPoolSize(cfg.Postgres.PoolMax))
@@ -53,10 +55,18 @@ func Run(cfg *config.Config) {
 
 	// Services
 	accountService := service.NewAccountService(cfg, log, accountRepo, sessionRepo)
+	sessionService := service.NewSessionService(log, cfg, sessionRepo)
+
+	jwt, err := JWT.New(cfg.AccessToken.SigningKey, cfg.AccessToken.TTL)
+	if err != nil {
+		l.Error("can't create jwt token", slog.String("error", err.Error()))
+		return
+	}
+	authService := service.NewAuthService(log, jwt, accountService, sessionService)
 
 	// Handlers v1
 	handler := gin.New()
-	v1.SetupHandlers(handler, log, cfg, accountService)
+	v1.SetupHandlers(handler, log, cfg, accountService, authService)
 
 	// HTTP Server
 	httpServer := httpserver.New(handler, httpserver.Port(cfg.HTTP.Port))

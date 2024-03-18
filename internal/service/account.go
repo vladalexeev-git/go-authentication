@@ -13,30 +13,29 @@ type AccountService struct {
 	cfg *config.Config
 	log *slog.Logger
 
-	repo AccountRepo
-	//TODO: sessions
-	sessions SessionRepo
+	repo    AccountRepo
+	session SessionRepo
 }
 
 func NewAccountService(cfg *config.Config, log *slog.Logger, repo AccountRepo, sess SessionRepo) *AccountService {
 
-	return &AccountService{cfg: cfg, log: log, repo: repo, sessions: sess}
+	return &AccountService{cfg: cfg, log: log, repo: repo, session: sess}
 }
 
-func (as *AccountService) Create(ctx context.Context, acc domain.Account) (string, error) {
+func (s *AccountService) Create(ctx context.Context, acc domain.Account) (string, error) {
 	const op = "service.create"
 
 	err := acc.GenPasswordHash()
 	if err != nil {
-		as.log.Error("can't gen password hash",
+		s.log.Error("can't gen password hash",
 			slog.String(utils.Operation, op),
 			slog.String("error", err.Error()))
 		return "", fmt.Errorf("%s : %w", op, err)
 	}
 
-	aid, err := as.repo.Create(ctx, acc)
+	aid, err := s.repo.Create(ctx, acc)
 	if err != nil {
-		as.log.Error("can't create account",
+		s.log.Error("can't create account",
 			slog.String(utils.Operation, op),
 			slog.String("error", err.Error()))
 		return "", fmt.Errorf("%s : %w", op, err)
@@ -44,42 +43,33 @@ func (as *AccountService) Create(ctx context.Context, acc domain.Account) (strin
 	return aid, nil
 }
 
-func (as *AccountService) GetByID(ctx context.Context, aid string) (domain.Account, error) {
+func (s *AccountService) GetByID(ctx context.Context, aid string) (domain.Account, error) {
 	const op = "service.GetByID"
 
-	acc, err := as.repo.FindByID(ctx, aid)
+	acc, err := s.repo.FindByID(ctx, aid)
 	if err != nil {
-		as.log.Error("can't get account by id",
-			slog.String(utils.Operation, op),
-			slog.String("error", err.Error()))
 		return domain.Account{}, fmt.Errorf("%s : %w", op, err)
 	}
 
 	return acc, nil
 }
 
-func (as *AccountService) GetByEmail(ctx context.Context, email string) (domain.Account, error) {
+func (s *AccountService) GetByEmail(ctx context.Context, email string) (domain.Account, error) {
 	const op = "service.FindByEmail"
 
-	acc, err := as.repo.FindByEmail(ctx, email)
+	acc, err := s.repo.FindByEmail(ctx, email)
 	if err != nil {
-		as.log.Error("can't get account by email",
-			slog.String(utils.Operation, op),
-			slog.String("error", err.Error()))
 		return domain.Account{}, fmt.Errorf("%s : %w", op, err)
 	}
 
 	return acc, nil
 }
 
-func (as *AccountService) Delete(ctx context.Context, aid string) error {
+func (s *AccountService) Delete(ctx context.Context, aid string) error {
 	const op = "service.Delete"
 
-	err := as.repo.Delete(ctx, aid)
+	err := s.repo.Delete(ctx, aid)
 	if err != nil {
-		as.log.Error("can't delete account",
-			slog.String(utils.Operation, op),
-			slog.String("error", err.Error()))
 		return fmt.Errorf("%s : %w", op, err)
 	}
 	return nil

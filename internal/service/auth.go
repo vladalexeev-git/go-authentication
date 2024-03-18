@@ -2,39 +2,51 @@ package service
 
 import (
 	"context"
-	"github.com/golang-jwt/jwt"
+	"fmt"
 	"log/slog"
 	"sso/internal/domain"
+	"sso/pkg/JWT"
 	"sso/pkg/utils"
 )
 
 type authService struct {
-	log     *slog.Logger
-	token   jwt.Token
+	log   *slog.Logger
+	token JWT.Token
+
 	account Account
-	session sessionService
+	session Session
 }
 
-func NewAuthService(log *slog.Logger, token jwt.Token, account Account) *authService {
-	return &authService{log: log, token: token, account: account}
+func NewAuthService(log *slog.Logger, token JWT.Token, account Account, session Session) *authService {
+	return &authService{log: log, token: token, account: account, session: session}
 }
 
-func (as *authService) EmailLogin(ctx context.Context, email, password string, d Device) (domain.Session, error) {
-	const op = "EmailLogin"
-	var s domain.Session
-	l := as.log.With(slog.String(utils.Operation, op))
+func (s *authService) EmailLogin(ctx context.Context, email, password string, d Device) (domain.Session, error) {
+	const op = "auth.emailLogin"
+	l := s.log.With(slog.String(utils.Operation, op))
 
-	acc, err := as.account.GetByEmail(ctx, email)
+	//fetching the account
+	a, err := s.account.GetByEmail(ctx, email)
 	if err != nil {
-		//todo return appropriate error and log
+		return domain.Session{}, fmt.Errorf("%s: %w", op, err)
+	}
+	l.Debug("account found",
+		slog.String("email", a.Email),
+		slog.String("id", a.ID),
+		slog.String("password hash", a.PasswordHash))
+
+	a.Password = password
+	err = a.CompareHashAndPassword()
+	if err != nil {
+		l.Error("can't login", slog.String("error", err.Error()))
+		l.Debug("", slog.String("hashed password", a.PasswordHash))
+		return domain.Session{}, fmt.Errorf("%s: %w", op, err)
 	}
 
-	acc.Password = password
-	err = acc.CompareHashAndPassword()
+	//creating a session
+	sess, err := s.session.Create(ctx, a.ID, a.Email, d)
 	if err != nil {
-		l.Error("password is incorrect")
-		return s, err
+		return domain.Session{}, fmt.Errorf("%s: %w", op, err)
 	}
-
-	return s, nil
+	return sess, nil
 }

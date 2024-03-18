@@ -10,7 +10,8 @@ postgres:
 
 session:
   ttl: 60m
-  cookie_key: "id"
+  cookie_key: "session_id"
+  cookie_path: ""
   cookie_domain: ""
   cookie_secure: false
   cookie_httponly: true

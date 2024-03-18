@@ -1,0 +1,804 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Authentication and account management service",
+    "description": "Service for managing accounts, sessions and authentication.\n",
+    "termsOfService": "http://swagger.io/terms/",
+    "contact": {
+      "email": "malykhsey@gmail.com"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://github.com/ysomad/go-auth-service/blob/main/LICENSE"
+    },
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://0.0.0.0:8080/v1",
+      "description": "Local server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "account",
+      "description": "Account operations"
+    },
+    {
+      "name": "auth",
+      "description": "Authentication operations"
+    },
+    {
+      "name": "session",
+      "description": "Session operations"
+    }
+  ],
+  "paths": {
+    "/accounts": {
+      "get": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Get account",
+        "operationId": "accountGet",
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Account"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized."
+          },
+          "500": {
+            "description": "Internal Server Error."
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Create account",
+        "description": "This can only be done by providing email, password and confirmPassword which should be the same as password.",
+        "operationId": "accountCreate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful operation."
+          },
+          "400": {
+            "description": "Invalid request body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Account with given credentials already exists.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Archive account",
+        "description": "Only account with state set to `isArchive=false` can be archived. Access token should be provided at query param, request it at `/auth/token/`.",
+        "operationId": "accountArchive",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "description": "Short live access token",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful operation.",
+            "headers": {
+              "Set-Cookie": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string",
+                  "example": "id=; Path=v1; Max-Age=-1; HttpOnly; Secure"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized."
+          },
+          "403": {
+            "description": "Invalid or expired access token."
+          },
+          "500": {
+            "description": "Internal Server Error."
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ]
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Login",
+        "description": "Creates new session and sets session id and csrf token in cookies.",
+        "operationId": "authLogin",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "headers": {
+              "Set-Cookie": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string",
+                  "example": "id=XN6StCMLLT4Ijc1fGhZPj83PJ2gjHrPB; Path=v1; Max-Age=60; HttpOnly; Secure"
+                }
+              },
+              "Sеt-Cookie": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string",
+                  "example": "CSRF-Token=XN6StCMLLT4Ijc1fGhZPj83PJ2gjHrPB; Path=v1; Max-Age=60; HttpOnly; Secure"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Incorrect email or password.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error."
+          }
+        }
+      }
+    },
+    "/auth/social": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Get social authorization url",
+        "description": "Request OAuth2 authorization url of given provider with `state`, `client_id` and `scope` query parameters",
+        "operationId": "authSocialGetURL",
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "query",
+            "description": "OAuth2 data provider",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "github",
+                "google"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "headers": {
+              "Sеt-Cookie": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string",
+                  "example": "CSRF-Token=XN6StCMLLT4Ijc1fGhZPj83PJ2gjHrPB; Path=v1; Max-Age=60; HttpOnly; Secure"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SocialAuthUrlResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error."
+          }
+        }
+      }
+    },
+    "/auth/social/github": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Login via GitHub",
+        "operationId": "authSocialGitHubCallback",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "query",
+            "description": "OAuth2 authorization code.",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "description": "CSRF token.",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "headers": {
+              "Set-Cookie": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string",
+                  "example": "id=XN6StCMLLT4Ijc1fGhZPj83PJ2gjHrPB; Path=v1; Max-Age=60; HttpOnly; Secure"
+                }
+              },
+              "Sеt-Cookie": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string",
+                  "example": "CSRF-Token=XN6StCMLLT4Ijc1fGhZPj83PJ2gjHrPB; Path=v1; Max-Age=60; HttpOnly; Secure"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found."
+          },
+          "500": {
+            "description": "Internal Server Error."
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Logout",
+        "description": "Log out from current session",
+        "operationId": "authLogout",
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful operation.",
+            "headers": {
+              "Set-Cookie": {
+                "style": "simple",
+                "explode": false,
+                "schema": {
+                  "type": "string",
+                  "example": "id=; Path=v1; Max-Age=-1; HttpOnly; Secure"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized."
+          },
+          "403": {
+            "description": "Forbidden."
+          },
+          "500": {
+            "description": "Internal Server Error."
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ]
+      }
+    },
+    "/auth/token": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Request access token",
+        "description": "Request short live token which can be used to perform protected operations",
+        "operationId": "authToken",
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccessTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessTokenResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized."
+          },
+          "403": {
+            "description": "Forbidden."
+          },
+          "500": {
+            "description": "Internal Server Error."
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ]
+      }
+    },
+    "/sessions": {
+      "get": {
+        "tags": [
+          "session"
+        ],
+        "summary": "Get account sessions",
+        "operationId": "sessionGetAccount",
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionArray"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized."
+          },
+          "500": {
+            "description": "Internal Server Error."
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "session"
+        ],
+        "summary": "Terminate all account sessions",
+        "description": "To terminate all account sessions, access token should be provided at query param, request it at `/auth/token/`.",
+        "operationId": "sessionDelete",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "description": "Short live access token",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful operation."
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Invalid or expired access token."
+          },
+          "500": {
+            "description": "Internal Server Error."
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ]
+      }
+    },
+    "/sessions/{sessionId}": {
+      "delete": {
+        "tags": [
+          "session"
+        ],
+        "summary": "Terminate account session",
+        "description": "To terminate account session access token should be provided at query parameters, request it at `/auth/token/`.",
+        "operationId": "sessionDeleteUser",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "description": "String ID of the session to terminate",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "description": "Short live access token",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful operation."
+          },
+          "400": {
+            "description": "Bad request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized."
+          },
+          "403": {
+            "description": "Invalid or expired access token."
+          },
+          "500": {
+            "description": "Internal Server Error."
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Account": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "UUID v4",
+            "format": "uuid"
+          },
+          "username": {
+            "maxLength": 16,
+            "minLength": 4,
+            "type": "string"
+          },
+          "email": {
+            "maxLength": 255,
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "maxLength": 64,
+            "minLength": 4,
+            "type": "string",
+            "format": "password"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "archive": {
+            "type": "boolean",
+            "description": "false by default"
+          },
+          "verified": {
+            "type": "boolean",
+            "description": "false by default, true for social auth"
+          }
+        }
+      },
+      "AccountCreateRequest": {
+        "required": [
+          "email",
+          "password",
+          "username"
+        ],
+        "type": "object",
+        "properties": {
+          "username": {
+            "maxLength": 16,
+            "minLength": 4,
+            "type": "string"
+          },
+          "email": {
+            "maxLength": 255,
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "maxLength": 64,
+            "minLength": 8,
+            "type": "string",
+            "format": "password"
+          }
+        }
+      },
+      "LoginRequest": {
+        "required": [
+          "email",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "format": "password"
+          }
+        }
+      },
+      "Session": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique string generated via Cryptographically Secure Pseudorandom Number Generator"
+          },
+          "accountId": {
+            "type": "string",
+            "description": "UUID v4",
+            "format": "uuid"
+          },
+          "provider": {
+            "type": "string",
+            "description": "OAuth2 data provider",
+            "format": "string"
+          },
+          "userAgent": {
+            "type": "string"
+          },
+          "ip": {
+            "type": "string",
+            "format": "ipv4"
+          },
+          "ttl": {
+            "type": "integer",
+            "description": "session expiry in seconds"
+          },
+          "expiresAt": {
+            "type": "integer",
+            "description": "unix timestamp",
+            "format": "int64"
+          },
+          "createdAt": {
+            "type": "integer",
+            "description": "unix timestamp",
+            "format": "int64"
+          }
+        }
+      },
+      "SessionArray": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Session"
+        }
+      },
+      "AccessTokenRequest": {
+        "required": [
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "string",
+            "format": "password"
+          }
+        }
+      },
+      "AccessTokenResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "JWT token contains Account ID as subject in payload"
+          }
+        }
+      },
+      "SocialAuthUrlResponse": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "url",
+            "example": "https://github.com/login/oauth?client_id=string&scope=string&state=string"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "ValidationErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ValidationErrorResponse_error"
+          }
+        }
+      },
+      "ValidationErrorResponse_error": {
+        "type": "object",
+        "properties": {
+          "fieldName": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "cookieAuth": {
+        "type": "apiKey",
+        "name": "id",
+        "in": "cookie"
+      }
+    }
+  }
+}

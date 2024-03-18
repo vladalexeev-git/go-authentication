@@ -5,19 +5,25 @@ import (
 	"sso/internal/domain"
 )
 
-// Service
+// Services
+
 type Account interface {
 	Create(ctx context.Context, acc domain.Account) (string, error)
 	GetByID(ctx context.Context, aid string) (domain.Account, error)
 	GetByEmail(ctx context.Context, email string) (domain.Account, error)
 	Delete(ctx context.Context, aid string) error
 }
+
+type Session interface {
+	Create(ctx context.Context, aid, provider string, d Device) (domain.Session, error)
+}
 type Auth interface {
 	// EmailLogin creates new session using provided account email and password.
-	//EmailLogin(ctx context.Context, email, password string, d Device) (domain.Session, error)
+	EmailLogin(ctx context.Context, email, password string, d Device) (domain.Session, error)
 }
 
-// Repository
+// Repositories:
+
 type AccountRepo interface {
 	Create(ctx context.Context, acc domain.Account) (string, error)
 	FindByID(ctx context.Context, id string) (domain.Account, error)

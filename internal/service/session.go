@@ -21,24 +21,22 @@ type Device struct {
 	IP        string
 }
 
-func NewSessionService(log *slog.Logger, cfg *config.Config) *sessionService {
-	return &sessionService{log: log, cfg: cfg}
+func NewSessionService(log *slog.Logger, cfg *config.Config, repo SessionRepo) *sessionService {
+	return &sessionService{log: log, cfg: cfg, repo: repo}
 }
 
 func (s *sessionService) Create(ctx context.Context, aid, provider string, d Device) (domain.Session, error) {
 	const op = "sessionservice.create"
-	log := s.log.With(slog.String(utils.Operation, op))
+	l := s.log.With(slog.String(utils.Operation, op))
 
 	session, err := domain.NewSession(aid, provider, d.UserAgent, d.IP, s.cfg.Session.TTL)
 	if err != nil {
-		log.Error("can't create session",
+		l.Error("can't create session",
 			slog.String("error", err.Error()))
 		return domain.Session{}, fmt.Errorf("%s: %w", op, err)
 	}
 
 	if err = s.repo.Create(ctx, session); err != nil {
-		log.Error("can't create session",
-			slog.String("error", err.Error()))
 		return domain.Session{}, fmt.Errorf("%s: %w", op, err)
 	}
 	return session, nil
