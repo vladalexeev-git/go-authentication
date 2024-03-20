@@ -32,10 +32,8 @@ func newAccountHandler(handler *gin.RouterGroup, log *slog.Logger, cfg *config.C
 	}
 }
 
-//TODO: Create special errors understandable for users
 //TODO: Think, maybe import domain models in this layer is a bad practice?
-
-//TODO: add context instead of context.TODO
+//TODO: Think how to organize information logs properly
 
 func (h *accountHandler) create(c *gin.Context) {
 	const op = "api.create"
@@ -44,9 +42,7 @@ func (h *accountHandler) create(c *gin.Context) {
 
 	err := c.BindJSON(&r)
 	if err != nil {
-		l.Error("can't unmarshal account request",
-			slog.String(utils.Operation, op),
-			slog.String("error", err.Error()))
+		l.Error("can't unmarshal account request", slog.String("error", err.Error()))
 
 		c.AbortWithStatusJSON(http.StatusBadRequest, ErrorResponse{Error: apperrors.ErrorValidate.Error()})
 		return
@@ -75,14 +71,19 @@ func (h *accountHandler) get(c *gin.Context) {
 	const op = "api.get"
 	l := h.log.With(slog.String(utils.Operation, op))
 
-	aid := c.GetString("aid") //todo add special method for getting account id with error return
+	aid, err := getAccountID(c)
+	if err != nil {
+		l.Error("can't get account id", slog.String("error", err.Error()))
+
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
 
 	acc, err := h.accountService.GetByID(c.Request.Context(), aid)
 	if err != nil {
 		if errors.Is(err, apperrors.ErrorAccountNotFound) {
-			l.Warn("account not found",
-				slog.String("account id", aid),
-				slog.String("error", err.Error()))
+			l.Warn("account not found", slog.String("account id", aid), slog.String("error", err.Error()))
+
 			c.AbortWithStatusJSON(http.StatusNotFound, ErrorResponse{Error: apperrors.ErrorAccountNotFound.Error()})
 			return
 		}
@@ -97,17 +98,25 @@ func (h *accountHandler) get(c *gin.Context) {
 func (h *accountHandler) delete(c *gin.Context) {
 	const op = "api.delete"
 	l := h.log.With(slog.String(utils.Operation, op))
-	aid := c.GetString("aid")
+
+	aid, err := getAccountID(c)
+	if err != nil {
+		l.Error("can't get account id", slog.String("error", err.Error()))
+
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
 
 	l.Debug("deleting acc by id", slog.String("aid", aid))
 
-	err := h.accountService.Delete(c.Request.Context(), aid)
+	err = h.accountService.Delete(c.Request.Context(), aid)
 	if err != nil {
+		l.Error("can't delete account", slog.String("error", err.Error()))
+
 		c.AbortWithStatusJSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
-		l.Error("can't delete account",
-			slog.String("error", err.Error()))
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "account was deleted",
 	})

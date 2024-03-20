@@ -2,10 +2,12 @@ package v1
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"log/slog"
 	"net/http"
 	"sso/config"
 	"sso/internal/service"
+	"sso/pkg/apperrors"
 	"sso/pkg/utils"
 )
 
@@ -41,7 +43,8 @@ func sessionMiddleware(log *slog.Logger, cfg *config.Config, s service.Session) 
 		}
 
 		if session.IP != d.IP || session.UserAgent != d.UserAgent {
-			l.Warn("ip or user agent is different", slog.String("error", err.Error()))
+
+			l.Warn("ip or user agent is different", slog.String("error", apperrors.ErrorSessionDeviceMismatch.Error()))
 
 			c.AbortWithStatus(http.StatusForbidden)
 			return
@@ -53,7 +56,19 @@ func sessionMiddleware(log *slog.Logger, cfg *config.Config, s service.Session) 
 	}
 }
 
-func getSessionID(c *gin.Context) string {
+func getAccountID(c *gin.Context) (string, error) {
+	aid := c.GetString("aid")
+	_, err := uuid.Parse(aid)
+	if err != nil {
+		return "", apperrors.ErrorContextAccountIdNotFount
+	}
+	return aid, nil
+}
+
+func getSessionID(c *gin.Context) (string, error) {
 	sid := c.GetString("sid")
-	return sid
+	if sid == "" {
+		return "", apperrors.ErrorContextSessionNotFound
+	}
+	return sid, nil
 }

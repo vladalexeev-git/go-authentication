@@ -43,7 +43,7 @@ func (r *accountRepo) Create(ctx context.Context, acc domain.Account) (string, e
 		Suffix("RETURNING id").
 		ToSql()
 	if err != nil {
-		l.Error("builder - bad insert query",
+		l.Error("pg.builder: bad insert query",
 			slog.String("error", err.Error()))
 
 		return "", fmt.Errorf("%s : %w", op, err)

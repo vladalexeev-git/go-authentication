@@ -26,7 +26,6 @@ func (a *Account) GenPasswordHash() error {
 	//depending on security and performance requirements
 	b, err := bcrypt.GenerateFromPassword([]byte(a.Password), 11)
 	if err != nil {
-
 		return fmt.Errorf("bcrypt.GenerateFromPassword: %w", apperrors.ErrorAccountPasswordNotGenerated)
 	}
 
