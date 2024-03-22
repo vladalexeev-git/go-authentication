@@ -15,6 +15,7 @@ type (
 		AccessToken `yaml:"access_token"`
 		Session     `yaml:"session"`
 		MongoDB     `yaml:"mongodb"`
+		CSRFToken   `yaml:"csrf-token"`
 	}
 
 	HTTP struct {
@@ -29,13 +30,20 @@ type (
 		URL     string `env:"PG_URL"`
 	}
 	Session struct {
-		TTL            time.Duration `yaml:"ttl"`
-		CookieKey      string        `yaml:"cookie_key"`
-		CookieDomain   string        `yaml:"cookie_domain"`
-		CookiePath     string        `yaml:"cookie_path"`
-		CookieSecure   bool          `yaml:"cookie_secure"`
-		CookieHttpOnly bool          `yaml:"cookie_httponly"`
+		TTL          time.Duration `yaml:"ttl"`
+		CookieKey    string        `yaml:"cookie_key"`
+		CookieDomain string        `yaml:"cookie_domain"`
+		//CookiePath     string        `yaml:"cookie_path"`
+		CookieSecure   bool `yaml:"cookie_secure"`
+		CookieHttpOnly bool `yaml:"cookie_httponly"`
 	}
+
+	CSRFToken struct {
+		CSRFttl       time.Duration `yaml:"ttl"`
+		CSRFCookieKey string        `yaml:"cookie_key"`
+		CSRFHeaderKey string        `yaml:"header_key"`
+	}
+
 	AccessToken struct {
 		TTL        time.Duration `yaml:"ttl"`
 		SigningKey string        `yaml:"signing_key"`

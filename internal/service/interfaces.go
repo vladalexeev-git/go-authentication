@@ -17,10 +17,13 @@ type Account interface {
 type Session interface {
 	Create(ctx context.Context, aid, provider string, d Device) (domain.Session, error)
 	Get(ctx context.Context, sid string) (domain.Session, error)
+	Terminate(ctx context.Context, sid string) error
 }
+
 type Auth interface {
 	// EmailLogin creates new session using provided account email and password.
 	EmailLogin(ctx context.Context, email, password string, d Device) (domain.Session, error)
+	Logout(ctx context.Context, sid string) error
 }
 
 // Repositories:

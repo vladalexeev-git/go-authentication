@@ -32,7 +32,7 @@ func SetupHandlers(
 
 	{
 		newAccountHandler(h, log, cfg, acc, sess)
-		newAuthHandler(h, log, cfg, auth)
+		newAuthHandler(h, log, cfg, auth, sess)
 	}
 
 }

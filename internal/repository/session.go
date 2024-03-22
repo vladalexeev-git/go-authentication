@@ -99,13 +99,14 @@ func (r *sessionRepo) Delete(ctx context.Context, sid string) error {
 	const op = "repository.session.Delete"
 	l := r.log.With(slog.String(utils.Operation, op))
 
-	_, err := r.mongo.DeleteOne(ctx, bson.M{"_id": sid})
+	res, err := r.mongo.DeleteOne(ctx, bson.M{"_id": sid})
 	if err != nil {
 		l.Error("r.deleteOne",
 			slog.String("error", err.Error()))
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
+	l.Debug("deleted document", slog.Int64("count", res.DeletedCount))
 	return nil
 }
 

@@ -52,3 +52,13 @@ func (s *sessionService) Get(ctx context.Context, sid string) (domain.Session, e
 
 	return session, nil
 }
+
+func (s *sessionService) Terminate(ctx context.Context, sid string) error {
+	const op = "sessionservice.terminate"
+
+	if err := s.repo.Delete(ctx, sid); err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}

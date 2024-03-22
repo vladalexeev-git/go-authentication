@@ -11,7 +11,6 @@ import (
 	"sso/pkg/utils"
 )
 
-// todo: pass config here or not?
 func sessionMiddleware(log *slog.Logger, cfg *config.Config, s service.Session) gin.HandlerFunc {
 	const op = "sessionMiddleware"
 	l := log.With(slog.String(utils.Operation, op))
@@ -19,7 +18,7 @@ func sessionMiddleware(log *slog.Logger, cfg *config.Config, s service.Session) 
 	return func(c *gin.Context) {
 		sid, err := c.Cookie(cfg.CookieKey)
 		if err != nil {
-			l.Error("session id is not passed", slog.String("error", err.Error())) //todo should we log?
+			l.Warn("session id is not passed", slog.String("error", err.Error()))
 
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
@@ -52,6 +51,84 @@ func sessionMiddleware(log *slog.Logger, cfg *config.Config, s service.Session) 
 
 		c.Set("sid", session.ID)
 		c.Set("aid", session.AccountID)
+		c.Next()
+	}
+}
+
+func setCSRFTokenMiddleware(log *slog.Logger, cfg *config.Config) gin.HandlerFunc {
+	const op = "setCSRFTokenMiddleware"
+	l := log.With(slog.String(utils.Operation, op))
+
+	return func(c *gin.Context) {
+
+		c.Next()
+
+		t, err := utils.UniqueString(32) //todo: maybe change to uuid
+		if err != nil {
+			l.Error("can't generate csrf token", slog.String("error", err.Error()))
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		l.Info("csrf token middleware", slog.String("token", t), slog.String("header key", cfg.CSRFHeaderKey), slog.String("cookie key", cfg.CSRFCookieKey))
+
+		c.Header(cfg.CSRFHeaderKey, t)
+		c.SetCookie(
+			cfg.CSRFCookieKey,
+			t,
+			int(cfg.CSRFttl.Seconds()),
+			apiPath,
+			cfg.CookieDomain,
+			cfg.CookieSecure,
+			cfg.CookieHttpOnly,
+		)
+	}
+}
+
+func csrfMiddleware(log *slog.Logger, cfg *config.Config) gin.HandlerFunc {
+	const op = "checkCSRFTokenMiddleware"
+	l := log.With(slog.String(utils.Operation, op))
+
+	return func(c *gin.Context) {
+		ct, err := c.Cookie(cfg.CSRFCookieKey)
+		if err != nil {
+			l.Warn("csrf token is not passed", slog.String("error", err.Error()))
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		ht := c.GetHeader(cfg.CSRFHeaderKey)
+
+		if ct != ht || ht == "" || ct == "" {
+			l.Warn("csrf token is invalid", slog.String("cookie token", ct), slog.String("header token", ht))
+			c.AbortWithStatus(http.StatusForbidden)
+			return
+		}
+
+		c.Next()
+
+		t := uuid.New().String() //todo: maybe change to utils.RandomString(32)
+
+		l.Info("csrf token middleware", slog.String("token", t), slog.String("header", cfg.CSRFHeaderKey), slog.String("cookie", cfg.CSRFCookieKey))
+
+		c.Header(cfg.CSRFHeaderKey, t)
+		c.SetCookie(
+			cfg.CSRFCookieKey,
+			t,
+			int(cfg.CSRFttl.Seconds()),
+			apiPath,
+			cfg.CookieDomain,
+			cfg.CookieSecure,
+			cfg.CookieHttpOnly,
+		)
+	}
+}
+
+func tokenMiddleware(log *slog.Logger, cfg *config.Config) gin.HandlerFunc {
+	const op = "tokenMiddleware"
+	l := log.With(slog.String(utils.Operation, op))
+	return func(c *gin.Context) {
+		l.Info("token middleware")
 		c.Next()
 	}
 }

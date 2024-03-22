@@ -11,10 +11,15 @@ postgres:
 session:
   ttl: 60m
   cookie_key: "session_id"
-  cookie_path: ""
+#  cookie_path: ""
   cookie_domain: ""
   cookie_secure: false
   cookie_httponly: true
+
+csrf-token:
+  ttl: 1h
+  cookie_key: "X-CSRF-Token"
+  header_key: "CSRF-Token"
 
 access_token:
   ttl: 1m

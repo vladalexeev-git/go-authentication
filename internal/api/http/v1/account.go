@@ -25,7 +25,7 @@ func newAccountHandler(handler *gin.RouterGroup, log *slog.Logger, cfg *config.C
 	g := handler.Group("/account")
 	g.POST("", h.create)
 
-	authenticated := g.Group("/", sessionMiddleware(log, cfg, sessionService))
+	authenticated := g.Group("/", sessionMiddleware(log, cfg, sessionService)) //todo: change important routes - add token middleware
 	{
 		authenticated.GET("", h.get)
 		authenticated.DELETE("", h.delete)

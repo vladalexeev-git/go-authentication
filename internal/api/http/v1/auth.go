@@ -8,34 +8,36 @@ import (
 	"sso/config"
 	"sso/internal/service"
 	"sso/pkg/apperrors"
+	"sso/pkg/utils"
 )
 
 type authHandler struct {
-	log *slog.Logger
+	l   *slog.Logger
 	cfg *config.Config
 
 	auth service.Auth
+	sess service.Session
 }
 
-func newAuthHandler(handler *gin.RouterGroup, log *slog.Logger, cfg *config.Config, auth service.Auth) {
-	h := &authHandler{log: log, cfg: cfg, auth: auth}
+func newAuthHandler(handler *gin.RouterGroup, log *slog.Logger, cfg *config.Config, auth service.Auth, sess service.Session) {
+	h := &authHandler{l: log, cfg: cfg, auth: auth, sess: sess}
 
-	g := handler.Group("/login")
-
+	g := handler.Group("/auth")
 	{
-		g.POST("/", h.login)
+		g.POST("/login", h.login).Use(setCSRFTokenMiddleware(log, cfg))
 
+		authenticated := g.Group("", csrfMiddleware(log, cfg), sessionMiddleware(log, cfg, sess))
+
+		{
+			authenticated.POST("/logout", h.logout)
+			authenticated.GET("/token", h.token)
+		}
 	}
-}
-
-type loginRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required"`
 }
 
 func (h *authHandler) login(c *gin.Context) {
 	const op = "api.login"
-	l := h.log.With(slog.String("operation", op))
+	l := h.l.With(slog.String("operation", op))
 	var r loginRequest
 
 	err := c.Bind(&r)
@@ -46,7 +48,7 @@ func (h *authHandler) login(c *gin.Context) {
 		return
 	}
 
-	l.Debug("login request",
+	l.Info("login request",
 		slog.Any("request", r),
 		slog.String("email", r.Email),
 		slog.String("user-agent", c.Request.UserAgent()),
@@ -75,7 +77,7 @@ func (h *authHandler) login(c *gin.Context) {
 		h.cfg.Session.CookieKey,
 		s.ID,
 		s.TTL,
-		h.cfg.Session.CookiePath,
+		apiPath,
 		h.cfg.Session.CookieDomain,
 		h.cfg.Session.CookieSecure,
 		h.cfg.Session.CookieHttpOnly,
@@ -84,4 +86,40 @@ func (h *authHandler) login(c *gin.Context) {
 
 }
 
-//todo logout
+func (h *authHandler) logout(c *gin.Context) {
+	const op = "api.logout"
+	l := h.l.With(slog.String(utils.Operation, op))
+
+	sid, err := getSessionID(c)
+	if err != nil {
+		l.Warn("can't get sid from cookie", slog.String("error", err.Error()))
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	if err = h.auth.Logout(c.Request.Context(), sid); err != nil {
+		l.Warn("can't logout", slog.String("error", err.Error()))
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	c.SetCookie( //todo why we set cookie anyway?
+		h.cfg.Session.CookieKey,
+		"",
+		-1,
+		apiPath,
+		h.cfg.Session.CookieDomain,
+		h.cfg.Session.CookieSecure,
+		h.cfg.Session.CookieHttpOnly,
+	)
+
+	c.AbortWithStatus(http.StatusOK)
+}
+
+// todo: implement
+func (h *authHandler) token(c *gin.Context) {
+	c.AbortWithStatusJSON(http.StatusOK, gin.H{
+		"message": "token is not implemented yet",
+	})
+}
