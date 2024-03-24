@@ -6,11 +6,6 @@ import (
 	"time"
 )
 
-type Token interface {
-	New(signingKey string) (string, error)
-	Parse(token string) (string, error)
-}
-
 type jwtToken struct {
 	signingKey string
 	ttl        time.Duration

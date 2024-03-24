@@ -17,19 +17,25 @@ type accountHandler struct {
 	cfg *config.Config
 
 	accountService service.Account
+	authService    service.Auth
 }
 
-func newAccountHandler(handler *gin.RouterGroup, log *slog.Logger, cfg *config.Config, accService service.Account, sessionService service.Session) {
-	h := &accountHandler{log: log, cfg: cfg, accountService: accService}
+func newAccountHandler(handler *gin.RouterGroup, log *slog.Logger, cfg *config.Config, accService service.Account, sessionService service.Session, authService service.Auth) {
+	h := &accountHandler{log: log, cfg: cfg, accountService: accService, authService: authService}
 
 	g := handler.Group("/account")
-	g.POST("", h.create)
 
-	authenticated := g.Group("/", sessionMiddleware(log, cfg, sessionService)) //todo: change important routes - add token middleware
+	authenticated := g.Group("/", sessionMiddleware(log, cfg, sessionService))
 	{
+		secure := authenticated.Group("/", tokenMiddleware(log, cfg, authService))
+		{
+			secure.DELETE("", h.delete)
+		}
+
 		authenticated.GET("", h.get)
-		authenticated.DELETE("", h.delete)
 	}
+
+	g.POST("", h.create)
 }
 
 //TODO: Think, maybe import domain models in this layer is a bad practice?
@@ -44,7 +50,7 @@ func (h *accountHandler) create(c *gin.Context) {
 	if err != nil {
 		l.Error("can't unmarshal account request", slog.String("error", err.Error()))
 
-		c.AbortWithStatusJSON(http.StatusBadRequest, ErrorResponse{Error: apperrors.ErrorValidate.Error()})
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{Error: apperrors.ErrorValidate.Error()})
 		return
 	}
 
@@ -57,10 +63,10 @@ func (h *accountHandler) create(c *gin.Context) {
 				slog.String(utils.Operation, op),
 				slog.String("error", err.Error()))
 
-			c.AbortWithStatusJSON(http.StatusConflict, ErrorResponse{Error: apperrors.ErrorAccountAlreadyExists.Error()})
+			c.AbortWithStatusJSON(http.StatusConflict, errorResponse{Error: apperrors.ErrorAccountAlreadyExists.Error()})
 			return
 		}
-		c.AbortWithStatusJSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse{Error: err.Error()})
 		return
 	}
 
@@ -84,11 +90,11 @@ func (h *accountHandler) get(c *gin.Context) {
 		if errors.Is(err, apperrors.ErrorAccountNotFound) {
 			l.Warn("account not found", slog.String("account id", aid), slog.String("error", err.Error()))
 
-			c.AbortWithStatusJSON(http.StatusNotFound, ErrorResponse{Error: apperrors.ErrorAccountNotFound.Error()})
+			c.AbortWithStatusJSON(http.StatusNotFound, errorResponse{Error: apperrors.ErrorAccountNotFound.Error()})
 			return
 		}
 
-		c.AbortWithStatusJSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse{Error: err.Error()})
 		return
 	}
 
@@ -113,7 +119,7 @@ func (h *accountHandler) delete(c *gin.Context) {
 	if err != nil {
 		l.Error("can't delete account", slog.String("error", err.Error()))
 
-		c.AbortWithStatusJSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse{Error: err.Error()})
 		return
 	}
 

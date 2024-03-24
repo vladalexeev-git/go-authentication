@@ -31,8 +31,9 @@ func SetupHandlers(
 	h := handler.Group(apiPath)
 
 	{
-		newAccountHandler(h, log, cfg, acc, sess)
+		newAccountHandler(h, log, cfg, acc, sess, auth)
 		newAuthHandler(h, log, cfg, auth, sess)
+		//todo session handler
 	}
 
 }

@@ -86,7 +86,7 @@ func setCSRFTokenMiddleware(log *slog.Logger, cfg *config.Config) gin.HandlerFun
 }
 
 func csrfMiddleware(log *slog.Logger, cfg *config.Config) gin.HandlerFunc {
-	const op = "checkCSRFTokenMiddleware"
+	const op = "csrfTokenMiddleware"
 	l := log.With(slog.String(utils.Operation, op))
 
 	return func(c *gin.Context) {
@@ -104,12 +104,17 @@ func csrfMiddleware(log *slog.Logger, cfg *config.Config) gin.HandlerFunc {
 			c.AbortWithStatus(http.StatusForbidden)
 			return
 		}
-
+		l.Info("csrf token middleware", slog.String("passed cookie token", ct), slog.String("passed header token", ht))
 		c.Next()
 
-		t := uuid.New().String() //todo: maybe change to utils.RandomString(32)
+		t, err := utils.UniqueString(32) //todo: maybe change to uuid
+		if err != nil {
+			l.Error("can't generate csrf token", slog.String("error", err.Error()))
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
 
-		l.Info("csrf token middleware", slog.String("token", t), slog.String("header", cfg.CSRFHeaderKey), slog.String("cookie", cfg.CSRFCookieKey))
+		l.Info("csrf token middleware", slog.String("new token (value)", t), slog.String("header name", cfg.CSRFHeaderKey), slog.String("cookie name", cfg.CSRFCookieKey))
 
 		c.Header(cfg.CSRFHeaderKey, t)
 		c.SetCookie(
@@ -124,11 +129,36 @@ func csrfMiddleware(log *slog.Logger, cfg *config.Config) gin.HandlerFunc {
 	}
 }
 
-func tokenMiddleware(log *slog.Logger, cfg *config.Config) gin.HandlerFunc {
+func tokenMiddleware(log *slog.Logger, cfg *config.Config, a service.Auth) gin.HandlerFunc {
 	const op = "tokenMiddleware"
 	l := log.With(slog.String(utils.Operation, op))
+
 	return func(c *gin.Context) {
-		l.Info("token middleware")
+		aid, err := getAccountID(c)
+		if err != nil {
+			l.Warn("account id is empty", slog.String("error", err.Error()))
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		t, found := c.GetQuery("token")
+		if !found || t == "" {
+			l.Warn("access token is not passed")
+			c.AbortWithStatus(http.StatusForbidden)
+			return
+		}
+
+		sub, err := a.ParseAccessToken(c.Request.Context(), t)
+		if err != nil {
+			l.Warn("access token is invalid", slog.String("error", err.Error()))
+			c.AbortWithStatus(http.StatusForbidden)
+			return
+		}
+		if aid != sub {
+			l.Warn("access token is invalid")
+			c.AbortWithStatus(http.StatusForbidden)
+			return
+		}
 		c.Next()
 	}
 }

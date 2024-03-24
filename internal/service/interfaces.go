@@ -5,7 +5,7 @@ import (
 	"sso/internal/domain"
 )
 
-// Services
+// Services:
 
 type Account interface {
 	Create(ctx context.Context, acc domain.Account) (string, error)
@@ -24,6 +24,13 @@ type Auth interface {
 	// EmailLogin creates new session using provided account email and password.
 	EmailLogin(ctx context.Context, email, password string, d Device) (domain.Session, error)
 	Logout(ctx context.Context, sid string) error
+	NewAccessToken(ctx context.Context, sub, password string) (string, error)
+	ParseAccessToken(ctx context.Context, token string) (string, error)
+}
+
+type Token interface {
+	New(sub string) (string, error)
+	Parse(token string) (string, error)
 }
 
 // Repositories:

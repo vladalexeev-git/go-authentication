@@ -1,6 +1,6 @@
 package v1
 
-type ErrorResponse struct {
+type errorResponse struct {
 	Error string `json:"error"`
 }
 
@@ -13,4 +13,12 @@ type accountCreateRequest struct {
 type loginRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required"`
+}
+
+type tokenRequest struct {
+	Password string `json:"password" binding:"required"`
+}
+
+type tokenResponse struct {
+	AccessToken string `json:"access_token"`
 }

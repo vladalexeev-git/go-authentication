@@ -24,14 +24,14 @@ func newAuthHandler(handler *gin.RouterGroup, log *slog.Logger, cfg *config.Conf
 
 	g := handler.Group("/auth")
 	{
-		g.POST("/login", h.login).Use(setCSRFTokenMiddleware(log, cfg))
-
 		authenticated := g.Group("", csrfMiddleware(log, cfg), sessionMiddleware(log, cfg, sess))
 
 		{
 			authenticated.POST("/logout", h.logout)
 			authenticated.GET("/token", h.token)
 		}
+
+		g.POST("/login", h.login).Use(setCSRFTokenMiddleware(log, cfg))
 	}
 }
 
@@ -44,7 +44,7 @@ func (h *authHandler) login(c *gin.Context) {
 	if err != nil {
 		l.Error("can't unmarshal login request", slog.String("error", err.Error()))
 
-		c.AbortWithStatusJSON(http.StatusBadRequest, ErrorResponse{Error: apperrors.ErrorValidate.Error()})
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{Error: apperrors.ErrorValidate.Error()})
 		return
 	}
 
@@ -66,7 +66,7 @@ func (h *authHandler) login(c *gin.Context) {
 		if errors.Is(err, apperrors.ErrorAccountNotFound) ||
 			errors.Is(err, apperrors.ErrorAccountWrongPassword) {
 			l.Warn("email or password incorrect")
-			c.AbortWithStatusJSON(http.StatusBadRequest, ErrorResponse{Error: apperrors.ErrorLoginOrPasswordIncorrect.Error()})
+			c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{Error: apperrors.ErrorLoginOrPasswordIncorrect.Error()})
 		}
 		l.Warn("cannot login", slog.String("error", err.Error()))
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -114,12 +114,38 @@ func (h *authHandler) logout(c *gin.Context) {
 		h.cfg.Session.CookieHttpOnly,
 	)
 
-	c.AbortWithStatus(http.StatusOK)
+	c.AbortWithStatus(http.StatusNoContent)
 }
 
-// todo: implement
 func (h *authHandler) token(c *gin.Context) {
-	c.AbortWithStatusJSON(http.StatusOK, gin.H{
-		"message": "token is not implemented yet",
-	})
+	const op = "api.token"
+	l := h.l.With(slog.String(utils.Operation, op))
+
+	var r tokenRequest
+
+	if err := c.ShouldBindJSON(&r); err != nil {
+		l.Error("can't unmarshal token request", slog.String("error", err.Error()))
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{Error: apperrors.ErrorValidate.Error()})
+		return
+	}
+
+	aid, err := getAccountID(c)
+	if err != nil {
+		l.Warn("can't get account id", slog.String("error", err.Error()))
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	t, err := h.auth.NewAccessToken(c.Request.Context(), aid, r.Password)
+	if err != nil {
+		l.Error("", slog.String("error", err.Error()))
+		if errors.Is(err, apperrors.ErrorAccountWrongPassword) {
+			c.AbortWithStatus(http.StatusForbidden)
+		}
+
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	c.JSON(http.StatusOK, tokenResponse{AccessToken: t})
+	return
 }
