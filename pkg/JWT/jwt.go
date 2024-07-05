@@ -2,7 +2,7 @@ package JWT
 
 import (
 	"github.com/golang-jwt/jwt"
-	"sso/pkg/apperrors"
+	"go-authentication/pkg/apperrors"
 	"time"
 )
 
@@ -47,3 +47,29 @@ func (j jwtToken) Parse(token string) (string, error) {
 	}
 	return claims["sub"].(string), nil
 }
+
+//func (maker *JWTMaker) VerifyToken(token string) (*Payload, error) {
+//	keyFunc := func(token *jwt.Token) (interface{}, error) {
+//		_, ok := token.Method.(*jwt.SigningMethodHMAC)
+//		if !ok {
+//			return nil, ErrInvalidToken
+//		}
+//		return []byte(maker.secretKey), nil
+//	}
+//
+//	jwtToken, err := jwt.ParseWithClaims(token, &Payload{}, keyFunc)
+//	if err != nil {
+//		verr, ok := err.(*jwt.ValidationError)
+//		if ok && errors.Is(verr.Inner, ErrExpiredToken) {
+//			return nil, ErrExpiredToken
+//		}
+//		return nil, ErrInvalidToken
+//	}
+//
+//	payload, ok := jwtToken.Claims.(*Payload)
+//	if !ok {
+//		return nil, ErrInvalidToken
+//	}
+//
+//	return payload, nil
+//}

@@ -1,6 +1,6 @@
-module sso
+module go-authentication
 
-go 1.21.3
+go 1.22
 
 require (
 	github.com/Masterminds/squirrel v1.5.4

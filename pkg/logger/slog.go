@@ -2,9 +2,9 @@ package logger
 
 import (
 	"github.com/lmittmann/tint"
+	"go-authentication/config"
 	"log/slog"
 	"os"
-	"sso/config"
 	"time"
 )
 

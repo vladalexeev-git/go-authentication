@@ -2,9 +2,9 @@ package v1
 
 import (
 	"github.com/gin-gonic/gin"
+	"go-authentication/config"
+	"go-authentication/internal/service"
 	"log/slog"
-	"sso/config"
-	"sso/internal/service"
 )
 
 const apiPath = "/v1"

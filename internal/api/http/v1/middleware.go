@@ -3,12 +3,12 @@ package v1
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"go-authentication/config"
+	"go-authentication/internal/service"
+	"go-authentication/pkg/apperrors"
+	"go-authentication/pkg/utils"
 	"log/slog"
 	"net/http"
-	"sso/config"
-	"sso/internal/service"
-	"sso/pkg/apperrors"
-	"sso/pkg/utils"
 )
 
 func sessionMiddleware(log *slog.Logger, cfg *config.Config, s service.Session) gin.HandlerFunc {

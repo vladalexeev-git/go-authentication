@@ -2,9 +2,9 @@ package main
 
 import (
 	"github.com/joho/godotenv"
+	"go-authentication/config"
+	"go-authentication/internal/app"
 	stdLog "log"
-	"sso/config"
-	"sso/internal/app"
 )
 
 func init() {

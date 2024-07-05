@@ -4,14 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go-authentication/pkg/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"sso/pkg/utils"
 
 	"log/slog"
 
-	"sso/internal/domain"
+	"go-authentication/internal/domain"
 )
 
 type sessionRepo struct {

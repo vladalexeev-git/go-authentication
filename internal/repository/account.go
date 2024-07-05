@@ -8,11 +8,11 @@ import (
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"go-authentication/internal/domain"
+	"go-authentication/pkg/apperrors"
+	"go-authentication/pkg/postgres"
+	"go-authentication/pkg/utils"
 	"log/slog"
-	"sso/internal/domain"
-	"sso/pkg/apperrors"
-	"sso/pkg/postgres"
-	"sso/pkg/utils"
 )
 
 // TODO: think about delete method may be should delete by whole acc or email too

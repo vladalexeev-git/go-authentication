@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 	"fmt"
+	"go-authentication/config"
+	"go-authentication/internal/domain"
+	"go-authentication/pkg/utils"
 	"log/slog"
-	"sso/config"
-	"sso/internal/domain"
-	"sso/pkg/utils"
 )
 
 type sessionService struct {

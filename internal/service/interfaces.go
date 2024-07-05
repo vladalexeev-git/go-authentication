@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"sso/internal/domain"
+	"go-authentication/internal/domain"
 )
 
 // Services:

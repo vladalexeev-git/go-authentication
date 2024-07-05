@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 	"fmt"
+	"go-authentication/internal/domain"
+	"go-authentication/pkg/utils"
 	"log/slog"
-	"sso/internal/domain"
-	"sso/pkg/utils"
 )
 
 type authService struct {

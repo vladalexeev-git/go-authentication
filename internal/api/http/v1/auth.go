@@ -3,12 +3,12 @@ package v1
 import (
 	"errors"
 	"github.com/gin-gonic/gin"
+	"go-authentication/config"
+	"go-authentication/internal/service"
+	"go-authentication/pkg/apperrors"
+	"go-authentication/pkg/utils"
 	"log/slog"
 	"net/http"
-	"sso/config"
-	"sso/internal/service"
-	"sso/pkg/apperrors"
-	"sso/pkg/utils"
 )
 
 type authHandler struct {

@@ -1,8 +1,8 @@
 package domain
 
 import (
-	"sso/pkg/apperrors"
-	"sso/pkg/utils"
+	"go-authentication/pkg/apperrors"
+	"go-authentication/pkg/utils"
 	"time"
 )
 
