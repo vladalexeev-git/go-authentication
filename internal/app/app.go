@@ -55,7 +55,7 @@ func Run(cfg *config.Config) {
 
 	// Services
 	accountService := service.NewAccountService(cfg, log, accountRepo, sessionRepo)
-	sessionService := service.NewSessionService(log, cfg, sessionRepo)
+	sessionService := service.NewSessionService(cfg, sessionRepo)
 
 	jwt, err := JWT.New(cfg.AccessToken.SigningKey, cfg.AccessToken.TTL)
 	if err != nil {

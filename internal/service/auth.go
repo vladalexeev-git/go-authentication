@@ -51,7 +51,7 @@ func (s *authService) EmailLogin(ctx context.Context, email, password string, d 
 func (s *authService) Logout(ctx context.Context, sid string) error {
 	const op = "auth.logout"
 
-	err := s.session.Terminate(ctx, sid)
+	err := s.session.Terminate(ctx, "", sid)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}

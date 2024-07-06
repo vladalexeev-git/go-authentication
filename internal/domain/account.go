@@ -2,7 +2,7 @@ package domain
 
 import (
 	"fmt"
-	"go-authentication/pkg/apperrors"
+	"go-authentication/internal/apperrors"
 	"go-authentication/pkg/utils"
 	"golang.org/x/crypto/bcrypt"
 	"time"

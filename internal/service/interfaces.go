@@ -17,7 +17,9 @@ type Account interface {
 type Session interface {
 	Create(ctx context.Context, aid, provider string, d Device) (domain.Session, error)
 	Get(ctx context.Context, sid string) (domain.Session, error)
-	Terminate(ctx context.Context, sid string) error
+	GetAll(ctx context.Context, aid string) ([]domain.Session, error)
+	Terminate(ctx context.Context, curSid string, reqSid string) error
+	TerminateAll(ctx context.Context, aid string, sid string) error
 }
 
 type Auth interface {

@@ -4,9 +4,9 @@ import (
 	"errors"
 	"github.com/gin-gonic/gin"
 	"go-authentication/config"
+	"go-authentication/internal/apperrors"
 	"go-authentication/internal/domain"
 	"go-authentication/internal/service"
-	"go-authentication/pkg/apperrors"
 	"go-authentication/pkg/utils"
 	"log/slog"
 	"net/http"
@@ -37,9 +37,6 @@ func newAccountHandler(handler *gin.RouterGroup, log *slog.Logger, cfg *config.C
 
 	g.POST("", h.create)
 }
-
-//TODO: Think, maybe import domain models in this layer is a bad practice?
-//TODO: Think how to organize information logs properly
 
 func (h *accountHandler) create(c *gin.Context) {
 	const op = "api.create"
@@ -101,7 +98,7 @@ func (h *accountHandler) get(c *gin.Context) {
 	c.JSON(http.StatusOK, acc)
 }
 
-func (h *accountHandler) delete(c *gin.Context) {
+func (h *accountHandler) delete(c *gin.Context) { //todo use soft delete instead
 	const op = "api.delete"
 	l := h.log.With(slog.String(utils.Operation, op))
 

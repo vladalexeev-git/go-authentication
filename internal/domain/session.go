@@ -1,7 +1,7 @@
 package domain
 
 import (
-	"go-authentication/pkg/apperrors"
+	"go-authentication/internal/apperrors"
 	"go-authentication/pkg/utils"
 	"time"
 )

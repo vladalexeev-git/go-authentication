@@ -2,7 +2,7 @@ package JWT
 
 import (
 	"github.com/golang-jwt/jwt"
-	"go-authentication/pkg/apperrors"
+	"go-authentication/internal/apperrors"
 	"time"
 )
 

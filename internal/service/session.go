@@ -4,13 +4,11 @@ import (
 	"context"
 	"fmt"
 	"go-authentication/config"
+	"go-authentication/internal/apperrors"
 	"go-authentication/internal/domain"
-	"go-authentication/pkg/utils"
-	"log/slog"
 )
 
 type sessionService struct {
-	log *slog.Logger
 	cfg *config.Config
 
 	repo SessionRepo
@@ -21,18 +19,16 @@ type Device struct {
 	IP        string
 }
 
-func NewSessionService(log *slog.Logger, cfg *config.Config, repo SessionRepo) *sessionService {
-	return &sessionService{log: log, cfg: cfg, repo: repo}
+func NewSessionService(cfg *config.Config, repo SessionRepo) *sessionService {
+	return &sessionService{cfg: cfg, repo: repo}
 }
 
 func (s *sessionService) Create(ctx context.Context, aid, provider string, d Device) (domain.Session, error) {
 	const op = "sessionservice.create"
-	l := s.log.With(slog.String(utils.Operation, op))
 
 	session, err := domain.NewSession(aid, provider, d.UserAgent, d.IP, s.cfg.Session.TTL)
 	if err != nil {
-		l.Error("can't create session",
-			slog.String("error", err.Error()))
+
 		return domain.Session{}, fmt.Errorf("%s: %w", op, err)
 	}
 
@@ -53,10 +49,35 @@ func (s *sessionService) Get(ctx context.Context, sid string) (domain.Session, e
 	return session, nil
 }
 
-func (s *sessionService) Terminate(ctx context.Context, sid string) error {
+func (s *sessionService) GetAll(ctx context.Context, aid string) ([]domain.Session, error) {
+	const op = "sessionservice.getall"
+
+	sessions, err := s.repo.FindAll(ctx, aid)
+	if err != nil {
+		return []domain.Session{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return sessions, nil
+}
+
+func (s *sessionService) Terminate(ctx context.Context, curSid string, reqSid string) error {
 	const op = "sessionservice.terminate"
 
-	if err := s.repo.Delete(ctx, sid); err != nil {
+	if curSid == reqSid {
+		return fmt.Errorf("%s: %w", op, apperrors.ErrorCurrentSessionTerminating)
+	}
+
+	if err := s.repo.Delete(ctx, reqSid); err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
+func (s *sessionService) TerminateAll(ctx context.Context, aid, sid string) error {
+	const op = "sessionservice.terminateAll"
+
+	if err := s.repo.DeleteAll(ctx, aid, sid); err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 

@@ -24,11 +24,11 @@ func NewSessionRepo(mongo *mongo.Database, logger *slog.Logger) *sessionRepo {
 }
 
 func (r *sessionRepo) Create(ctx context.Context, session domain.Session) error {
-	const op = "repository.session..create"
+	const op = "repository.session.create"
 	l := r.log.With(slog.String(utils.Operation, op))
 
 	ttlIndex := mongo.IndexModel{
-		Keys:    bson.D{{Key: "createdAt", Value: 1}},
+		Keys:    bson.D{{Key: "createdAt", Value: 1}}, // sorting asc
 		Options: options.Index().SetExpireAfterSeconds(int32(session.TTL)),
 	}
 	_, err := r.mongo.Indexes().CreateOne(ctx, ttlIndex)
@@ -83,7 +83,6 @@ func (r *sessionRepo) FindAll(ctx context.Context, aid string) ([]domain.Session
 			slog.String("error", err.Error()))
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
-	defer cursor.Close(ctx) //todo ?
 
 	var sessions []domain.Session
 
@@ -124,6 +123,5 @@ func (r *sessionRepo) DeleteAll(ctx context.Context, aid, currSid string) error 
 			slog.String("error", err.Error()))
 		return fmt.Errorf("%s: %w", op, err)
 	}
-
 	return nil
 }

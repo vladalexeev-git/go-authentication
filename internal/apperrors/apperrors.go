@@ -19,9 +19,10 @@ var (
 
 // session errors
 var (
-	ErrorSessionNotCreated      = errors.New("error occurred while creating session")
-	ErrorSessionDeviceMismatch  = errors.New("device doesn't match with device of current session")
-	ErrorContextSessionNotFound = errors.New("session id in context not found")
+	ErrorSessionNotCreated         = errors.New("error occurred while creating session")
+	ErrorSessionDeviceMismatch     = errors.New("device doesn't match with device of current session")
+	ErrorContextSessionNotFound    = errors.New("session id not found in context ")
+	ErrorCurrentSessionTerminating = errors.New("current session cannot be terminated, use logout instead")
 )
 
 // jwt errors

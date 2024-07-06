@@ -33,7 +33,7 @@ func SetupHandlers(
 	{
 		newAccountHandler(h, log, cfg, acc, sess, auth)
 		newAuthHandler(h, log, cfg, auth, sess)
-		//todo session handler
+		newSessionHandler(h, log, cfg, sess, auth)
 	}
 
 }
