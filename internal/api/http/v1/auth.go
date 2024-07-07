@@ -19,19 +19,36 @@ type authHandler struct {
 	sess service.Session
 }
 
-func newAuthHandler(handler *gin.RouterGroup, log *slog.Logger, cfg *config.Config, auth service.Auth, sess service.Session) {
-	h := &authHandler{l: log, cfg: cfg, auth: auth, sess: sess}
+func newAuthHandler(
+	handler *gin.RouterGroup,
+	log *slog.Logger,
+	cfg *config.Config,
+	auth service.Auth,
+	//socAuth service.SocialAuth,
+	sess service.Session) {
+
+	h := &authHandler{
+		l:    log,
+		cfg:  cfg,
+		auth: auth,
+		sess: sess,
+	}
 
 	g := handler.Group("/auth")
 	{
-		authenticated := g.Group("", csrfMiddleware(log, cfg), sessionMiddleware(log, cfg, sess))
+		g.POST("/login", h.login).Use(setCSRFTokenMiddleware(log, cfg))
 
+		//social := g.Group("/social")
+		//{
+		//social.POST("/login", h.socialLogin).Use(setCSRFTokenMiddleware(log, cfg))
+		//}
+
+		authenticated := g.Group("/", csrfMiddleware(log, cfg), sessionMiddleware(log, cfg, sess))
 		{
-			authenticated.POST("/logout", h.logout)
-			authenticated.GET("/token", h.token)
+			authenticated.POST("logout", h.logout)
+			authenticated.GET("token", h.token)
 		}
 
-		g.POST("/login", h.login).Use(setCSRFTokenMiddleware(log, cfg))
 	}
 }
 
@@ -82,8 +99,7 @@ func (h *authHandler) login(c *gin.Context) {
 		h.cfg.Session.CookieSecure,
 		h.cfg.Session.CookieHttpOnly,
 	)
-	c.AbortWithStatus(http.StatusOK)
-
+	c.Status(http.StatusOK)
 }
 
 func (h *authHandler) logout(c *gin.Context) {

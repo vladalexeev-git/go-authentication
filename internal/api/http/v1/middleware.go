@@ -63,7 +63,7 @@ func setCSRFTokenMiddleware(log *slog.Logger, cfg *config.Config) gin.HandlerFun
 
 		c.Next()
 
-		t, err := utils.UniqueString(32) //todo: maybe change to uuid
+		t, err := utils.UniqueString(32)
 		if err != nil {
 			l.Error("can't generate csrf token", slog.String("error", err.Error()))
 			c.AbortWithStatus(http.StatusInternalServerError)

@@ -15,8 +15,6 @@ import (
 	"log/slog"
 )
 
-// TODO: think about delete method may be should delete by whole acc or email too
-// TODO: delete method do not return anything even if can't find account, think how to improve
 const _accTable = "accounts"
 
 type accountRepo struct {

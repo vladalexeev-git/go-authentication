@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"go-authentication/internal/domain"
+	"net/url"
 )
 
 // Services:
@@ -28,6 +29,12 @@ type Auth interface {
 	Logout(ctx context.Context, sid string) error
 	NewAccessToken(ctx context.Context, sub, password string) (string, error)
 	ParseAccessToken(ctx context.Context, token string) (string, error)
+}
+
+type SocialAuth interface {
+	// AuthorizationURL returns OAuth authorization URL of given provider with
+	// client id, scope and state query parameters.
+	AuthorizationURL(ctx context.Context, provider string) (*url.URL, error)
 }
 
 type Token interface {
